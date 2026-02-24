@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  name         String   @default("Admin")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Product {
+  id           Int           @id @default(autoincrement())
+  name         String
+  slug         String        @unique
+  category     Category      @default(CHAIR)
+  description  String        @db.Text
+  material     String
+  dimensions   String
+  price        Float?
+  availability Boolean       @default(true)
+  featured     Boolean       @default(false)
+  images       String[]
+  tags         String[]      @default([])
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model OrderRequest {
+  id           Int           @id @default(autoincrement())
+  customerName String
+  phone        String
+  email        String
+  company      String?
+  location     String
+  productName  String
+  quantity     Int
+  material     String?
+  timeline     String?
+  notes        String?       @db.Text
+  status       OrderStatus   @default(NEW)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model SiteContent {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model ThemeConfig {
+  id           Int      @id @default(autoincrement())
+  defaultTheme String   @default("light")
+  updatedAt    DateTime @updatedAt
+}
+
+enum Category {
+  CHAIR
+  BENCH
+  CUSTOM
+}
+
+enum OrderStatus {
+  NEW
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
