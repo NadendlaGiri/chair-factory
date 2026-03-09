@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, Navigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Armchair, Loader2, Eye, EyeOff } from 'lucide-react';
 import { loginAdmin } from '../../services/api';
@@ -35,7 +35,12 @@ export default function AdminLogin() {
     return (
         <>
             <Helmet><title>Admin Login – Chair Factory</title></Helmet>
-            <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--hero-gradient)' }}>
+            <div className="min-h-screen flex items-center justify-center px-4 relative" style={{ background: 'var(--hero-gradient)' }}>
+                {/* Back to website */}
+                <Link to="/" className="absolute top-6 left-6 flex items-center gap-2 text-sm font-medium transition-opacity hover:opacity-70" style={{ color: 'var(--text-secondary)' }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                    Back to Website
+                </Link>
                 <div className="w-full max-w-md animate-slide-up">
                     {/* Logo */}
                     <div className="text-center mb-8">
@@ -76,6 +81,9 @@ export default function AdminLogin() {
 
                     <p className="text-center text-xs mt-6" style={{ color: 'var(--text-muted)' }}>
                         Default: admin@chairfactory.com / Admin@1234
+                    </p>
+                    <p className="text-center mt-3">
+                        <Link to="/" className="text-xs hover:underline" style={{ color: 'var(--accent)' }}>← Back to main website</Link>
                     </p>
                 </div>
             </div>
