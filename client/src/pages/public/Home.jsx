@@ -31,35 +31,27 @@ function HeroSkeleton({ visible }) {
     const { theme } = useThemeStore();
 
     const skeletons = {
-        // Warm shimmer wave
+        // Light — pulsing skeleton bars
         light: (
-            <div className="absolute inset-0 overflow-hidden" style={{ background: 'var(--hero-gradient)' }}>
-                <style>{`
-                    @keyframes hero-shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
-                `}</style>
-                <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.25) 50%,transparent 100%)', animation: 'hero-shimmer 1.8s ease infinite' }} />
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 opacity-20">
-                    <div className="h-8 w-64 rounded-lg" style={{ background: 'var(--accent)' }} />
-                    <div className="h-4 w-96 rounded-lg" style={{ background: 'var(--accent)' }} />
-                    <div className="h-4 w-72 rounded-lg" style={{ background: 'var(--accent)' }} />
-                    <div className="flex gap-3 mt-4">
-                        <div className="h-10 w-32 rounded-xl" style={{ background: 'var(--accent)' }} />
-                        <div className="h-10 w-32 rounded-xl" style={{ background: 'var(--accent)', opacity: 0.5 }} />
-                    </div>
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4" style={{ background: 'var(--hero-gradient)' }}>
+                <style>{`@keyframes sk-pulse { 0%,100%{opacity:0.15} 50%{opacity:0.35} }`}</style>
+                <div className="h-8 w-64 rounded-lg" style={{ background: 'var(--accent)', animation: 'sk-pulse 1.6s ease infinite' }} />
+                <div className="h-4 w-96 rounded-lg" style={{ background: 'var(--accent)', animation: 'sk-pulse 1.6s ease infinite 0.1s' }} />
+                <div className="h-4 w-72 rounded-lg" style={{ background: 'var(--accent)', animation: 'sk-pulse 1.6s ease infinite 0.2s' }} />
+                <div className="flex gap-3 mt-4">
+                    <div className="h-10 w-32 rounded-xl" style={{ background: 'var(--accent)', animation: 'sk-pulse 1.6s ease infinite 0.3s' }} />
+                    <div className="h-10 w-32 rounded-xl" style={{ background: 'var(--accent)', animation: 'sk-pulse 1.6s ease infinite 0.4s' }} />
                 </div>
             </div>
         ),
-        // Dark — shimmer sweep (no scan line)
+        // Dark — pulsing skeleton bars
         dark: (
-            <div className="absolute inset-0 overflow-hidden" style={{ background: '#0f0f0f' }}>
-                <style>{`
-                    @keyframes dark-shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
-                `}</style>
-                <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.04) 50%,transparent 100%)', animation: 'dark-shimmer 2s ease infinite' }} />
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-                    {[72, 96, 80, 0].map((w, i) => w ? (
-                        <div key={i} className="rounded" style={{ height: i === 0 ? 28 : 14, width: `${w * 4}px`, background: 'rgba(255,255,255,0.07)', borderRadius: 6 }} />
-                    ) : <div key={i} className="h-4" />)}
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4" style={{ background: '#0f0f0f' }}>
+                {[288, 384, 320].map((w, i) => (
+                    <div key={i} style={{ height: i === 0 ? 28 : 14, width: w, background: 'rgba(255,255,255,0.08)', borderRadius: 6, animation: `sk-pulse 1.6s ease infinite ${i * 0.1}s` }} />
+                ))}
+                <div className="flex gap-3 mt-4">
+                    {[128, 128].map((w, i) => <div key={i} style={{ height: 40, width: w, background: 'rgba(255,255,255,0.08)', borderRadius: 10, animation: `sk-pulse 1.6s ease infinite ${0.3 + i * 0.1}s` }} />)}
                 </div>
             </div>
         ),
@@ -82,13 +74,14 @@ function HeroSkeleton({ visible }) {
                 </div>
             </div>
         ),
-        // Wood — warm shimmer (same as light but sepia toned)
+        // Wood — pulsing skeleton bars (warm tones)
         wood: (
-            <div className="absolute inset-0 overflow-hidden" style={{ background: 'linear-gradient(135deg,#3b1f0c 0%,#6b3a1f 100%)' }}>
-                <style>{`@keyframes wood-sheen { 0%{transform:translateX(-100%) rotate(15deg)} 100%{transform:translateX(200%) rotate(15deg)} }`}</style>
-                <div className="absolute inset-0" style={{ background: 'linear-gradient(105deg,transparent 40%,rgba(205,150,90,0.18) 50%,transparent 60%)', animation: 'wood-sheen 2s ease infinite' }} />
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 opacity-25">
-                    {[260, 380, 300].map((w, i) => <div key={i} className="rounded-lg" style={{ height: i === 0 ? 28 : 14, width: w, background: '#cd9654' }} />)}
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4" style={{ background: 'linear-gradient(135deg,#3b1f0c 0%,#6b3a1f 100%)' }}>
+                {[260, 380, 300].map((w, i) => (
+                    <div key={i} className="rounded-lg" style={{ height: i === 0 ? 28 : 14, width: w, background: 'rgba(205,150,90,0.25)', animation: `sk-pulse 1.6s ease infinite ${i * 0.1}s` }} />
+                ))}
+                <div className="flex gap-3 mt-4">
+                    {[128, 128].map((w, i) => <div key={i} style={{ height: 40, width: w, background: 'rgba(205,150,90,0.2)', borderRadius: 10, animation: `sk-pulse 1.6s ease infinite ${0.3 + i * 0.1}s` }} />)}
                 </div>
             </div>
         ),
