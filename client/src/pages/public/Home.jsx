@@ -7,6 +7,7 @@ import { STAT_ICONS } from '../admin/AdminContent';
 import ProductCard from '../../components/public/ProductCard';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { useCompanyStore } from '../../store/companyStore';
+import { useThemeStore } from '../../store/themeStore';
 
 const FALLBACK_ICON_MAP = [Clock, Award, Users, Globe];
 
@@ -24,6 +25,104 @@ const DEFAULT_FEATURES = [
     { icon: '🚚', title: 'Pan-India Delivery', desc: 'Fast logistics with safe packaging to any location in India.' },
     { icon: '✏️', title: 'Custom Design', desc: 'Design your own — dimensions, material, finish, and upholstery.' },
 ];
+
+// ── Theme-aware hero loading skeleton ──────────────────────────────────────
+function HeroSkeleton({ visible }) {
+    const { theme } = useThemeStore();
+
+    const skeletons = {
+        // Warm shimmer wave
+        light: (
+            <div className="absolute inset-0 overflow-hidden" style={{ background: 'var(--hero-gradient)' }}>
+                <style>{`
+                    @keyframes hero-shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
+                `}</style>
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.25) 50%,transparent 100%)', animation: 'hero-shimmer 1.8s ease infinite' }} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 opacity-20">
+                    <div className="h-8 w-64 rounded-lg" style={{ background: 'var(--accent)' }} />
+                    <div className="h-4 w-96 rounded-lg" style={{ background: 'var(--accent)' }} />
+                    <div className="h-4 w-72 rounded-lg" style={{ background: 'var(--accent)' }} />
+                    <div className="flex gap-3 mt-4">
+                        <div className="h-10 w-32 rounded-xl" style={{ background: 'var(--accent)' }} />
+                        <div className="h-10 w-32 rounded-xl" style={{ background: 'var(--accent)', opacity: 0.5 }} />
+                    </div>
+                </div>
+            </div>
+        ),
+        // Dark — vertical scan line
+        dark: (
+            <div className="absolute inset-0 overflow-hidden" style={{ background: '#0f0f0f' }}>
+                <style>{`
+                    @keyframes scan { 0%{top:-10%} 100%{top:110%} }
+                `}</style>
+                <div className="absolute left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg,transparent,var(--accent),transparent)', opacity: 0.7, animation: 'scan 1.5s linear infinite' }} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+                    {[72, 96, 80, 0].map((w, i) => w ? (
+                        <div key={i} className="rounded" style={{ height: i === 0 ? 28 : 14, width: `${w * 4}px`, background: 'rgba(255,255,255,0.07)' }} />
+                    ) : <div key={i} className="h-6" />)}
+                </div>
+            </div>
+        ),
+        // Industrial — blinking bars
+        industrial: (
+            <div className="absolute inset-0 overflow-hidden" style={{ background: '#1a1a18' }}>
+                <style>{`
+                    @keyframes blink-a { 0%,49%{opacity:1} 50%,100%{opacity:0.2} }
+                    @keyframes blink-b { 0%,49%{opacity:0.2} 50%,100%{opacity:1} }
+                `}</style>
+                <div className="absolute inset-0 flex items-center justify-center gap-2">
+                    {[1,2,3,4,5,6,7,8].map((_, i) => (
+                        <div key={i} style={{
+                            width: 6, height: `${40 + (i % 3) * 30}px`,
+                            background: 'var(--accent)',
+                            borderRadius: 2,
+                            animation: `${i % 2 === 0 ? 'blink-a' : 'blink-b'} ${0.6 + i * 0.1}s step-end infinite`,
+                        }} />
+                    ))}
+                </div>
+            </div>
+        ),
+        // Wood — warm shimmer (same as light but sepia toned)
+        wood: (
+            <div className="absolute inset-0 overflow-hidden" style={{ background: 'linear-gradient(135deg,#3b1f0c 0%,#6b3a1f 100%)' }}>
+                <style>{`@keyframes wood-sheen { 0%{transform:translateX(-100%) rotate(15deg)} 100%{transform:translateX(200%) rotate(15deg)} }`}</style>
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(105deg,transparent 40%,rgba(205,150,90,0.18) 50%,transparent 60%)', animation: 'wood-sheen 2s ease infinite' }} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 opacity-25">
+                    {[260, 380, 300].map((w, i) => <div key={i} className="rounded-lg" style={{ height: i === 0 ? 28 : 14, width: w, background: '#cd9654' }} />)}
+                </div>
+            </div>
+        ),
+        // Modern — rotating arc
+        modern: (
+            <div className="absolute inset-0" style={{ background: 'var(--hero-gradient)' }}>
+                <style>{`@keyframes arc { to { transform: rotate(360deg); } }`}</style>
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <div style={{
+                        width: 64, height: 64,
+                        borderRadius: '50%',
+                        border: '4px solid rgba(var(--accent-rgb, 146,64,14),0.15)',
+                        borderTopColor: 'var(--accent)',
+                        animation: 'arc 0.9s linear infinite',
+                    }} />
+                </div>
+            </div>
+        ),
+    };
+
+    return (
+        <div
+            className="absolute inset-0"
+            style={{
+                zIndex: 10,
+                pointerEvents: visible ? 'auto' : 'none',
+                opacity: visible ? 1 : 0,
+                transition: 'opacity 0.6s ease',
+            }}
+        >
+            {skeletons[theme] || skeletons.light}
+        </div>
+    );
+}
 
 export default function Home() {
     const [featured, setFeatured] = useState([]);
@@ -79,6 +178,8 @@ export default function Home() {
 
             {/* Hero */}
             <section className="relative overflow-hidden min-h-[90vh] h-[90vh] flex items-center">
+                {/* Theme-aware loading skeleton — fades out once content loads */}
+                <HeroSkeleton visible={loading} />
                 {/* ── Background slideshow ── */}
                 {heroImages.length > 0 ? (
                     <>
