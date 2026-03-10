@@ -49,17 +49,17 @@ function HeroSkeleton({ visible }) {
                 </div>
             </div>
         ),
-        // Dark — vertical scan line
+        // Dark — shimmer sweep (no scan line)
         dark: (
             <div className="absolute inset-0 overflow-hidden" style={{ background: '#0f0f0f' }}>
                 <style>{`
-                    @keyframes scan { 0%{top:-10%} 100%{top:110%} }
+                    @keyframes dark-shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
                 `}</style>
-                <div className="absolute left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg,transparent,var(--accent),transparent)', opacity: 0.7, animation: 'scan 1.5s linear infinite' }} />
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.04) 50%,transparent 100%)', animation: 'dark-shimmer 2s ease infinite' }} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
                     {[72, 96, 80, 0].map((w, i) => w ? (
-                        <div key={i} className="rounded" style={{ height: i === 0 ? 28 : 14, width: `${w * 4}px`, background: 'rgba(255,255,255,0.07)' }} />
-                    ) : <div key={i} className="h-6" />)}
+                        <div key={i} className="rounded" style={{ height: i === 0 ? 28 : 14, width: `${w * 4}px`, background: 'rgba(255,255,255,0.07)', borderRadius: 6 }} />
+                    ) : <div key={i} className="h-4" />)}
                 </div>
             </div>
         ),
