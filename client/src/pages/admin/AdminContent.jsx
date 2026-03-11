@@ -4,7 +4,8 @@ import {
     Save, Loader2, Plus, Trash2, Home, Info, Phone, ImagePlus, X,
     Clock, Award, Users, Globe, Trophy, Star, Zap, Heart,
     Briefcase, Factory, Truck, Shield, Wrench, Leaf,
-    BarChart2, ThumbsUp, MapPin, Package, Smile, Cpu
+    BarChart2, ThumbsUp, MapPin, Package, Smile, Cpu,
+    LayoutGrid, Eye, EyeOff, ChevronUp, ChevronDown, Lock
 } from 'lucide-react';
 import { getAllContent, upsertContent, uploadImages } from '../../services/api';
 import toast from 'react-hot-toast';
@@ -60,6 +61,14 @@ const DEFAULT_TIMELINE = [
     { year: '2016', event: 'Opened a showroom and custom design studio.' },
     { year: '2020', event: 'Achieved ISO 9001:2015 quality certification.' },
     { year: '2024', event: 'Serving 2,000+ clients with 300+ dedicated staff.' },
+];
+
+const DEFAULT_LAYOUT = [
+    { id: 'hero',     label: 'Hero / Slideshow',    locked: true,  visible: true },
+    { id: 'stats',   label: 'Stats Strip',           locked: false, visible: true },
+    { id: 'products',label: 'Featured Products',     locked: false, visible: true },
+    { id: 'features',label: 'Why Choose Us',         locked: false, visible: true },
+    { id: 'cta',     label: 'Call to Action (CTA)',  locked: false, visible: true },
 ];
 
 /* ── helpers ────────────────────────────────────────────── */
@@ -194,6 +203,8 @@ export default function AdminContent() {
     const [heroImages, setHeroImages] = useState([]);
     const [heroImgUploading, setHeroImgUploading] = useState(false);
     const heroImgInputRef = useRef(null);
+    const [homeLayout, setHomeLayout] = useState(DEFAULT_LAYOUT);
+    const [savingLayout, setSavingLayout] = useState(false);
 
     useEffect(() => {
         getAllContent()
@@ -209,6 +220,19 @@ export default function AdminContent() {
                     contact: { phone: '', email: '', address: '', whatsapp: '', hours: '', ...data.contact },
                 });
                 setHeroImages(data.heroImages || []);
+                // Merge saved layout with defaults (handles new sections added in future)
+                if (data.homeLayout && Array.isArray(data.homeLayout)) {
+                    const saved = data.homeLayout;
+                    const merged = DEFAULT_LAYOUT.map(def => {
+                        const found = saved.find(s => s.id === def.id);
+                        return found ? { ...def, visible: found.visible } : def;
+                    });
+                    // Honour saved order for unlocked items
+                    const lockedFirst = merged.filter(s => s.locked);
+                    const savedOrder = saved.filter(s => !s.locked).map(s => merged.find(m => m.id === s.id)).filter(Boolean);
+                    const newItems = merged.filter(s => !s.locked && !saved.find(sv => sv.id === s.id));
+                    setHomeLayout([...lockedFirst, ...savedOrder, ...newItems]);
+                }
             })
             .catch(() => toast.error('Failed to load content'))
             .finally(() => setLoading(false));
@@ -256,10 +280,34 @@ export default function AdminContent() {
     const setArr = (key, value) =>
         setContent(c => ({ ...c, [key]: value }));
 
+    /* ── Layout helpers ── */
+    const moveLayout = (idx, dir) => {
+        setHomeLayout(prev => {
+            const arr = [...prev];
+            const target = idx + dir;
+            // Cannot move into/past the locked hero
+            if (target <= 0 || target >= arr.length) return arr;
+            [arr[idx], arr[target]] = [arr[target], arr[idx]];
+            return arr;
+        });
+    };
+    const toggleLayout = (id) => {
+        setHomeLayout(prev => prev.map(s => s.id === id ? { ...s, visible: !s.visible } : s));
+    };
+    const saveLayout = async () => {
+        setSavingLayout(true);
+        try {
+            await upsertContent('homeLayout', homeLayout.map(({ id, visible }) => ({ id, visible })));
+            toast.success('Layout saved!');
+        } catch { toast.error('Save failed'); }
+        finally { setSavingLayout(false); }
+    };
+
     const tabs = [
-        { id: 'home', label: 'Home', icon: Home },
-        { id: 'about', label: 'About', icon: Info },
-        { id: 'contact', label: 'Contact & Footer', icon: Phone },
+        { id: 'home',   label: 'Home',    icon: Home },
+        { id: 'about',  label: 'About',   icon: Info },
+        { id: 'contact',label: 'Contact & Footer', icon: Phone },
+        { id: 'layout', label: 'Page Layout', icon: LayoutGrid },
     ];
 
     if (loading) return (
@@ -523,6 +571,108 @@ export default function AdminContent() {
                                 <li>• <strong>Contact page</strong> — all 4 contact cards + address block + WhatsApp CTA</li>
                                 <li>• <strong>Footer</strong> — phone, email, address in the right column; WhatsApp button</li>
                                 <li>• <strong>Company branding</strong> — see the Settings page for company name, tagline, footer text</li>
+                            </ul>
+                        </div>
+                    </div>
+                )}
+                {/* ── LAYOUT TAB ────────────────────────────────── */}
+                {tab === 'layout' && (
+                    <div className="space-y-4">
+                        <div className="card space-y-4">
+                            <SectionHeader title="🗂️ Home Page Layout" />
+                            <p className="text-sm -mt-2" style={{ color: 'var(--text-muted)' }}>
+                                Toggle sections on/off and drag them into the order you want them to appear on the home page.
+                                The <strong>Hero</strong> is always first and cannot be moved or hidden.
+                            </p>
+
+                            <div className="space-y-2">
+                                {homeLayout.map((section, idx) => (
+                                    <div
+                                        key={section.id}
+                                        className="flex items-center gap-3 p-4 rounded-xl transition-all"
+                                        style={{
+                                            border: '1px solid var(--border)',
+                                            backgroundColor: section.visible ? 'var(--surface)' : 'var(--surface-overlay)',
+                                            opacity: section.visible ? 1 : 0.6,
+                                        }}
+                                    >
+                                        {/* Order badge */}
+                                        <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                                            style={{ backgroundColor: 'var(--surface-overlay)', color: 'var(--accent)' }}>
+                                            {idx + 1}
+                                        </span>
+
+                                        {/* Label */}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
+                                                {section.label}
+                                            </p>
+                                            {section.locked && (
+                                                <p className="text-xs flex items-center gap-1 mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                                                    <Lock size={10} /> Always shown — cannot be moved or hidden
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {/* Up / Down — only for unlocked items */}
+                                        {!section.locked && (
+                                            <div className="flex flex-col gap-0.5">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => moveLayout(idx, -1)}
+                                                    disabled={idx <= 1}
+                                                    title="Move up"
+                                                    className="p-1 rounded transition-all hover:opacity-70 disabled:opacity-20"
+                                                    style={{ color: 'var(--text-muted)' }}>
+                                                    <ChevronUp size={16} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => moveLayout(idx, 1)}
+                                                    disabled={idx >= homeLayout.length - 1}
+                                                    title="Move down"
+                                                    className="p-1 rounded transition-all hover:opacity-70 disabled:opacity-20"
+                                                    style={{ color: 'var(--text-muted)' }}>
+                                                    <ChevronDown size={16} />
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {/* Visibility toggle */}
+                                        {!section.locked ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleLayout(section.id)}
+                                                title={section.visible ? 'Hide section' : 'Show section'}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                                                style={{
+                                                    backgroundColor: section.visible ? 'rgba(22,163,74,0.12)' : 'var(--surface-overlay)',
+                                                    color: section.visible ? '#16a34a' : 'var(--text-muted)',
+                                                    border: `1px solid ${section.visible ? 'rgba(22,163,74,0.3)' : 'var(--border)'}`,
+                                                }}>
+                                                {section.visible ? <Eye size={13} /> : <EyeOff size={13} />}
+                                                {section.visible ? 'Visible' : 'Hidden'}
+                                            </button>
+                                        ) : (
+                                            <span className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+                                                style={{ backgroundColor: 'rgba(22,163,74,0.12)', color: '#16a34a', border: '1px solid rgba(22,163,74,0.3)' }}>
+                                                Always On
+                                            </span>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+
+                            <SaveBtn saving={savingLayout} label="Save Layout" onClick={saveLayout} />
+                        </div>
+
+                        <div className="card" style={{ backgroundColor: 'var(--surface-overlay)' }}>
+                            <p className="text-sm font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>💡 How it works</p>
+                            <ul className="text-sm space-y-1" style={{ color: 'var(--text-muted)' }}>
+                                <li>• Use <strong>↑ / ↓</strong> to reorder sections</li>
+                                <li>• Click <strong>Visible / Hidden</strong> to toggle a section on or off</li>
+                                <li>• Click <strong>Save Layout</strong> — changes appear on the home page immediately</li>
+                                <li>• Content inside each section is edited in the <strong>Home tab</strong></li>
                             </ul>
                         </div>
                     </div>

@@ -137,6 +137,13 @@ export default function Home() {
         }).catch(console.error).finally(() => setLoading(false));
     }, []);
 
+    const DEFAULT_HOME_LAYOUT = [
+        { id: 'stats' }, { id: 'products' }, { id: 'features' }, { id: 'cta' },
+    ];
+    const savedLayout = (content.homeLayout && Array.isArray(content.homeLayout))
+        ? content.homeLayout
+        : DEFAULT_HOME_LAYOUT;
+
     // Auto-advance slideshow every 4 seconds
     useEffect(() => {
         if (heroImages.length < 2) return;
@@ -286,83 +293,87 @@ export default function Home() {
                 </a>
             </section>
 
-            {/* Stats */}
-            <section id="stats" className="py-16" style={{ backgroundColor: 'var(--surface-raised)', borderTop: '1px solid var(--border)' }}>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        {stats.map((stat, i) => {
-                            const found = STAT_ICONS.find(s => s.key === stat.icon);
-                            const Icon = found?.Icon || FALLBACK_ICON_MAP[i % FALLBACK_ICON_MAP.length];
-                            return (
-                                <div key={i} className="text-center p-6 rounded-xl card group">
-                                    <Icon size={28} className="mx-auto mb-3 transition-transform group-hover:scale-110" style={{ color: 'var(--accent)' }} />
-                                    <div className="text-3xl font-bold mb-1" style={{ color: 'var(--accent)', fontFamily: "'Playfair Display', serif" }}>
-                                        {stat.value}
-                                    </div>
-                                    <div className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>{stat.label}</div>
+            {/* ── Dynamic section rendering based on admin layout config ── */}
+            {savedLayout
+                .filter(s => s.id !== 'hero' && s.visible !== false)
+                .map(s => {
+                    if (s.id === 'stats') return (
+                        <section key="stats" id="stats" className="py-16" style={{ backgroundColor: 'var(--surface-raised)', borderTop: '1px solid var(--border)' }}>
+                            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                                    {stats.map((stat, i) => {
+                                        const found = STAT_ICONS.find(s => s.key === stat.icon);
+                                        const Icon = found?.Icon || FALLBACK_ICON_MAP[i % FALLBACK_ICON_MAP.length];
+                                        return (
+                                            <div key={i} className="text-center p-6 rounded-xl card group">
+                                                <Icon size={28} className="mx-auto mb-3 transition-transform group-hover:scale-110" style={{ color: 'var(--accent)' }} />
+                                                <div className="text-3xl font-bold mb-1" style={{ color: 'var(--accent)', fontFamily: "'Playfair Display', serif" }}>{stat.value}</div>
+                                                <div className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>{stat.label}</div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </section>
-
-            {/* Featured Products */}
-            <section className="py-20">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-12">
-                        <h2 className="section-title">Featured Products</h2>
-                        <p className="section-subtitle">Handpicked bestsellers from our catalog</p>
-                    </div>
-                    {loading ? <LoadingSpinner /> : (
-                        <>
-                            <div className="products-grid">
-                                {featured.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
                             </div>
-                            <div className="text-center mt-12">
-                                <Link to="/products" className="btn-outline text-base py-3 px-8">
-                                    View All Products <ArrowRight size={18} />
-                                </Link>
+                        </section>
+                    );
+                    if (s.id === 'products') return (
+                        <section key="products" className="py-20">
+                            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                                <div className="text-center mb-12">
+                                    <h2 className="section-title">Featured Products</h2>
+                                    <p className="section-subtitle">Handpicked bestsellers from our catalog</p>
+                                </div>
+                                {loading ? <LoadingSpinner /> : (
+                                    <>
+                                        <div className="products-grid">
+                                            {featured.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+                                        </div>
+                                        <div className="text-center mt-12">
+                                            <Link to="/products" className="btn-outline text-base py-3 px-8">
+                                                View All Products <ArrowRight size={18} />
+                                            </Link>
+                                        </div>
+                                    </>
+                                )}
                             </div>
-                        </>
-                    )}
-                </div>
-            </section>
-
-            {/* Why Us */}
-            <section className="py-20" style={{ backgroundColor: 'var(--surface-raised)' }}>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-12">
-                        <h2 className="section-title">Why Choose Us?</h2>
-                        <p className="section-subtitle">Factory quality at competitive prices</p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {features.map((item, i) => (
-                            <div key={i} className="card text-center group hover:border-current" style={{ borderColor: 'var(--border)' }}>
-                                <span className="text-4xl mb-4 block transition-transform duration-300 group-hover:scale-110">{item.icon}</span>
-                                <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>{item.title}</h3>
-                                <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>{item.desc}</p>
+                        </section>
+                    );
+                    if (s.id === 'features') return (
+                        <section key="features" className="py-20" style={{ backgroundColor: 'var(--surface-raised)' }}>
+                            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                                <div className="text-center mb-12">
+                                    <h2 className="section-title">Why Choose Us?</h2>
+                                    <p className="section-subtitle">Factory quality at competitive prices</p>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                    {features.map((item, i) => (
+                                        <div key={i} className="card text-center group hover:border-current" style={{ borderColor: 'var(--border)' }}>
+                                            <span className="text-4xl mb-4 block transition-transform duration-300 group-hover:scale-110">{item.icon}</span>
+                                            <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>{item.title}</h3>
+                                            <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>{item.desc}</p>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* CTA */}
-            <section className="py-20" style={{ background: 'var(--hero-gradient)' }}>
-                <div className="max-w-3xl mx-auto px-4 text-center">
-                    <h2 className="section-title mb-4">{ctaTitle}</h2>
-                    <p className="section-subtitle mb-8">{ctaSubtitle}</p>
-                    <div className="flex flex-wrap justify-center gap-4">
-                        <Link to="/orders" className="btn-primary text-base py-3 px-8">
-                            Submit Order Request <ArrowRight size={18} />
-                        </Link>
-                        <Link to="/contact" className="btn-outline text-base py-3 px-8">
-                            Contact Us
-                        </Link>
-                    </div>
-                </div>
-            </section>
+                        </section>
+                    );
+                    if (s.id === 'cta') return (
+                        <section key="cta" className="py-20" style={{ background: 'var(--hero-gradient)' }}>
+                            <div className="max-w-3xl mx-auto px-4 text-center">
+                                <h2 className="section-title mb-4">{ctaTitle}</h2>
+                                <p className="section-subtitle mb-8">{ctaSubtitle}</p>
+                                <div className="flex flex-wrap justify-center gap-4">
+                                    <Link to="/orders" className="btn-primary text-base py-3 px-8">
+                                        Submit Order Request <ArrowRight size={18} />
+                                    </Link>
+                                    <Link to="/contact" className="btn-outline text-base py-3 px-8">Contact Us</Link>
+                                </div>
+                            </div>
+                        </section>
+                    );
+                    return null;
+                })
+            }
         </>
     );
 }
