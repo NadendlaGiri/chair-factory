@@ -16,9 +16,26 @@ export default function ProductDetail() {
 
     const handleShare = async () => {
         const url = window.location.href;
+        const shareData = { title: product?.name, text: product?.description?.slice(0, 100), url };
+
+        // Try to include the product image as a file (Web Share Level 2)
         if (navigator.share) {
             try {
-                await navigator.share({ title: product?.name, text: product?.description?.slice(0, 100), url });
+                let shared = false;
+                if (images?.[0] && navigator.canShare) {
+                    try {
+                        const res = await fetch(images[0]);
+                        const blob = await res.blob();
+                        const ext = blob.type.split('/')[1] || 'jpg';
+                        const file = new File([blob], `${product.name}.${ext}`, { type: blob.type });
+                        const withFile = { ...shareData, files: [file] };
+                        if (navigator.canShare(withFile)) {
+                            await navigator.share(withFile);
+                            shared = true;
+                        }
+                    } catch (_) { /* image fetch failed, fall through */ }
+                }
+                if (!shared) await navigator.share(shareData);
             } catch (_) { /* user dismissed */ }
         } else {
             await navigator.clipboard.writeText(url);
