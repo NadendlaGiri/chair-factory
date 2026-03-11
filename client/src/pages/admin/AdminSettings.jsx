@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Building2, User, Lock, Save, Loader2, CheckCircle, Eye, EyeOff, AlertCircle, ImagePlus, X } from 'lucide-react';
+import { Building2, User, Lock, Save, Loader2, CheckCircle, Eye, EyeOff, AlertCircle, ImagePlus, X, Tag, Plus } from 'lucide-react';
 import { upsertContent, getAllContent, updateAdminProfile, uploadImages } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import { useCompanyStore } from '../../store/companyStore';
@@ -62,18 +62,27 @@ export default function AdminSettings() {
     const [showPwds, setShowPwds] = useState({ current: false, next: false, confirm: false });
     const [pwdStatus, setPwdStatus] = useState({ saving: false, msg: '', type: '' });
 
+    /* ── Product Categories & Materials state ── */
+    const [catInput, setCatInput] = useState('');
+    const [matInput, setMatInput] = useState('');
+    const [categories, setCategories] = useState([]);
+    const [materials, setMaterials] = useState([]);
+    const [catStatus, setCatStatus] = useState({ saving: false, msg: '', type: '' });
+
     /* ── Load brand data on mount ── */
     useEffect(() => {
         getAllContent().then(data => {
             const company = data.company || {};
             const logo = company.logo || '';
             setBrand({
-                companyName: company.name || 'Chair Factory',
-                tagline: company.tagline || 'Factory-direct quality furniture since 1998',
+                companyName: company.name || '',
+                tagline: company.tagline || '',
                 footerText: company.footerText || '',
                 logo,
             });
             setLogoPreview(logo);
+            if (Array.isArray(data.productCategories)) setCategories(data.productCategories);
+            if (Array.isArray(data.productMaterials)) setMaterials(data.productMaterials);
         }).catch(() => { });
     }, []);
 
@@ -291,6 +300,82 @@ export default function AdminSettings() {
                         {pwdStatus.saving ? <><Loader2 size={14} className="animate-spin" />Updating…</> : <><Lock size={14} />Change Password</>}
                     </button>
                     <Toast msg={pwdStatus.msg} type={pwdStatus.type} />
+                </div>
+            </Section>
+
+            {/* ── Product Categories & Materials ── */}
+            <Section icon={Tag} title="Product Categories & Materials">
+                <p className="text-sm -mt-2" style={{ color: 'var(--text-muted)' }}>
+                    These drive the category dropdown when adding products and the filter tabs on the public Products page.
+                </p>
+
+                {/* Categories */}
+                <div>
+                    <label className="label">Categories</label>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                        {categories.map((c, i) => (
+                            <span key={i} className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+                                style={{ backgroundColor: 'var(--surface-overlay)', color: 'var(--accent)', border: '1px solid var(--border)' }}>
+                                {c}
+                                <button type="button" onClick={() => setCategories(prev => prev.filter((_, j) => j !== i))}
+                                    className="hover:opacity-70" aria-label="Remove"><X size={11} /></button>
+                            </span>
+                        ))}
+                    </div>
+                    <div className="flex gap-2">
+                        <input className="input flex-1" value={catInput} placeholder="e.g. Chairs, Sofas, Tables"
+                            onChange={e => setCatInput(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); const v = catInput.trim(); if (v && !categories.includes(v)) { setCategories(p => [...p, v]); setCatInput(''); } } }} />
+                        <button type="button" className="btn-outline px-3 py-2 text-sm"
+                            onClick={() => { const v = catInput.trim(); if (v && !categories.includes(v)) { setCategories(p => [...p, v]); setCatInput(''); } }}>
+                            <Plus size={14} /> Add
+                        </button>
+                    </div>
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Press Enter or click Add</p>
+                </div>
+
+                {/* Materials */}
+                <div>
+                    <label className="label">Materials (optional — for filter dropdown)</label>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                        {materials.map((m, i) => (
+                            <span key={i} className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+                                style={{ backgroundColor: 'var(--surface-overlay)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+                                {m}
+                                <button type="button" onClick={() => setMaterials(prev => prev.filter((_, j) => j !== i))}
+                                    className="hover:opacity-70" aria-label="Remove"><X size={11} /></button>
+                            </span>
+                        ))}
+                    </div>
+                    <div className="flex gap-2">
+                        <input className="input flex-1" value={matInput} placeholder="e.g. Solid Oak, Steel, Fabric"
+                            onChange={e => setMatInput(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); const v = matInput.trim(); if (v && !materials.includes(v)) { setMaterials(p => [...p, v]); setMatInput(''); } } }} />
+                        <button type="button" className="btn-outline px-3 py-2 text-sm"
+                            onClick={() => { const v = matInput.trim(); if (v && !materials.includes(v)) { setMaterials(p => [...p, v]); setMatInput(''); } }}>
+                            <Plus size={14} /> Add
+                        </button>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-4 pt-1">
+                    <button
+                        disabled={catStatus.saving}
+                        className="btn-primary py-2 px-5 text-sm disabled:opacity-60 flex items-center gap-2"
+                        onClick={async () => {
+                            setCatStatus({ saving: true, msg: '', type: '' });
+                            try {
+                                await Promise.all([
+                                    upsertContent('productCategories', categories),
+                                    upsertContent('productMaterials', materials),
+                                ]);
+                                setCatStatus({ saving: false, msg: 'Saved!', type: 'success' });
+                            } catch { setCatStatus({ saving: false, msg: 'Save failed', type: 'error' }); }
+                            setTimeout(() => setCatStatus(s => ({ ...s, msg: '' })), 3000);
+                        }}>
+                        {catStatus.saving ? <><Loader2 size={14} className="animate-spin" />Saving…</> : <><Save size={14} />Save Categories</>}
+                    </button>
+                    <Toast msg={catStatus.msg} type={catStatus.type} />
                 </div>
             </Section>
         </div>

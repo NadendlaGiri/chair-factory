@@ -33,7 +33,7 @@ export default function Footer() {
                             {companyName}
                         </Link>
                         <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                            {tagline || 'Premium handcrafted chairs and benches since 1998. Factory-direct quality for homes, offices, and commercial spaces.'}
+                            {tagline}
                         </p>
                         {whatsapp && (
                         <a

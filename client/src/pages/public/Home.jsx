@@ -11,20 +11,7 @@ import { useThemeStore } from '../../store/themeStore';
 
 const FALLBACK_ICON_MAP = [Clock, Award, Users, Globe];
 
-const DEFAULT_STATS = [
-    { label: 'Years of Experience', value: '25+' },
-    { label: 'Products Made', value: '50K+' },
-    { label: 'Happy Clients', value: '2,000+' },
-    { label: 'Countries Served', value: '15+' },
-];
-const DEFAULT_FEATURES = [
-    { icon: '🏭', title: 'Factory Direct', desc: 'No middlemen. Buy directly from manufacturer at best prices.' },
-    { icon: '🪵', title: 'Premium Materials', desc: 'FSC-certified wood, commercial-grade steel, and premium upholstery.' },
-    { icon: '📦', title: 'Bulk Capability', desc: 'From single pieces to 10,000+ units. Custom specs available.' },
-    { icon: '🔧', title: '5-Year Warranty', desc: 'Structural warranty on all products with free repair service.' },
-    { icon: '🚚', title: 'Pan-India Delivery', desc: 'Fast logistics with safe packaging to any location in India.' },
-    { icon: '✏️', title: 'Custom Design', desc: 'Design your own — dimensions, material, finish, and upholstery.' },
-];
+
 
 // ── Theme-aware hero loading skeleton ──────────────────────────────────────
 function HeroSkeleton({ visible }) {
@@ -163,11 +150,11 @@ export default function Home() {
     const ctaPrimary = hero.ctaPrimary || '';
     const ctaSecondary = hero.ctaSecondary || '';
 
-    const stats = (content.stats && content.stats.length > 0) ? content.stats : DEFAULT_STATS;
-    const features = (content.features && content.features.length > 0) ? content.features : DEFAULT_FEATURES;
+    const stats = content.stats || [];
+    const features = content.features || [];
     const homeCTA = content.homeCTA || {};
-    const ctaTitle = homeCTA.title || 'Ready to Order?';
-    const ctaSubtitle = homeCTA.subtitle || 'Submit your bulk order request or contact us for a custom quote. We respond within 24 hours.';
+    const ctaTitle = homeCTA.title || '';
+    const ctaSubtitle = homeCTA.subtitle || '';
 
     return (
         <>

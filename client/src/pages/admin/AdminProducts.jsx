@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Plus, Pencil, Trash2, Loader2, X, Package, ImagePlus } from 'lucide-react';
-import { getProducts, createProduct, updateProduct, deleteProduct, uploadImages } from '../../services/api';
+import { getProducts, createProduct, updateProduct, deleteProduct, uploadImages, getAllContent } from '../../services/api';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ConfirmModal from '../../components/ui/ConfirmModal';
 import toast from 'react-hot-toast';
 
-const CATEGORIES = ['CHAIR', 'BENCH', 'CUSTOM'];
-const empty = { name: '', category: 'CHAIR', description: '', material: '', dimensions: '', price: '', availability: true, featured: false, tags: '' };
+const empty = (firstCat = 'General') => ({ name: '', category: firstCat, description: '', material: '', dimensions: '', price: '', availability: true, featured: false, tags: '' });
 
 export default function AdminProducts() {
     const [products, setProducts] = useState([]);
@@ -17,11 +16,19 @@ export default function AdminProducts() {
     const [editing, setEditing] = useState(null);
     const [form, setForm] = useState(empty);
     const [saving, setSaving] = useState(false);
-    const [imgFiles, setImgFiles] = useState([]);   // new files picked by user
-    const [existingImages, setExistingImages] = useState([]); // already-saved URLs
+    const [imgFiles, setImgFiles] = useState([]);
+    const [existingImages, setExistingImages] = useState([]);
     const [page, setPage] = useState(1);
     const [confirmState, setConfirmState] = useState({ open: false, id: null });
+    const [categories, setCategories] = useState(['General']);
     const fileInputRef = useRef(null);
+
+    useEffect(() => {
+        getAllContent().then(data => {
+            const cats = data?.productCategories;
+            if (Array.isArray(cats) && cats.length > 0) setCategories(cats);
+        }).catch(() => {});
+    }, []);
 
     const fetchProducts = async () => {
         setLoading(true);
@@ -35,7 +42,7 @@ export default function AdminProducts() {
 
     useEffect(() => { fetchProducts(); }, [page]);
 
-    const openCreate = () => { setEditing(null); setForm(empty); setImgFiles([]); setExistingImages([]); setModal(true); };
+    const openCreate = () => { setEditing(null); setForm(empty(categories[0])); setImgFiles([]); setExistingImages([]); setModal(true); };
     const openEdit = (p) => {
         setEditing(p);
         setForm({ ...p, price: p.price || '', tags: (p.tags || []).join(', ') });
@@ -198,7 +205,7 @@ export default function AdminProducts() {
                                 <div>
                                     <label className="label">Category *</label>
                                     <select className="input" value={form.category} onChange={e => set('category', e.target.value)}>
-                                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                        {categories.map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
                                 </div>
                                 <div>

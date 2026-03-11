@@ -23,7 +23,7 @@ model Product {
   id           Int           @id @default(autoincrement())
   name         String
   slug         String        @unique
-  category     Category      @default(CHAIR)
+  category     String        @default("General")
   description  String        @db.Text
   material     String
   dimensions   String
@@ -66,11 +66,7 @@ model ThemeConfig {
   updatedAt    DateTime @updatedAt
 }
 
-enum Category {
-  CHAIR
-  BENCH
-  CUSTOM
-}
+
 
 enum OrderStatus {
   NEW

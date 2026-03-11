@@ -9,7 +9,7 @@ const getProducts = async (req, res) => {
     try {
         const { category, material, featured, search, page = 1, limit = 12 } = req.query;
         const where = {};
-        if (category) where.category = category.toUpperCase();
+        if (category) where.category = { equals: category, mode: 'insensitive' };
         if (material) where.material = { contains: material, mode: 'insensitive' };
         if (featured === 'true') where.featured = true;
         if (search) where.name = { contains: search, mode: 'insensitive' };
@@ -49,7 +49,7 @@ const createProduct = async (req, res) => {
 
         const product = await prisma.product.create({
             data: {
-                name, slug, category: category.toUpperCase(),
+                name, slug, category: category.trim(),
                 description, material, dimensions: dimensions || '',
                 price: price ? parseFloat(price) : null,
                 availability: availability !== undefined ? availability : true,
@@ -71,7 +71,7 @@ const updateProduct = async (req, res) => {
         const { name, category, description, material, dimensions, price, availability, featured, images, tags } = req.body;
         const data = {};
         if (name) { data.name = name; data.slug = slugify(name); }
-        if (category) data.category = category.toUpperCase();
+        if (category) data.category = category.trim();
         if (description) data.description = description;
         if (material) data.material = material;
         if (dimensions !== undefined) data.dimensions = dimensions;

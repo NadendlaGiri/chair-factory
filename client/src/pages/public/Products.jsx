@@ -2,13 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Search, SlidersHorizontal, X, ChevronDown } from 'lucide-react';
-import { getProducts } from '../../services/api';
+import { getProducts, getAllContent } from '../../services/api';
 import ProductCard from '../../components/public/ProductCard';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
-const CATEGORIES = ['All', 'CHAIR', 'BENCH', 'CUSTOM'];
-const CATEGORY_LABELS = { All: 'All Products', CHAIR: 'Chairs', BENCH: 'Benches', CUSTOM: 'Custom' };
-const MATERIALS = ['All', 'Solid Oak', 'Teak Wood', 'Solid Pine', 'American Black Walnut', 'Steel', 'Mesh & Aluminum Frame', 'Steel & Fabric', 'Steel & Rattan'];
+
 
 export default function Products() {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -17,6 +15,17 @@ export default function Products() {
     const [pages, setPages] = useState(1);
     const [loading, setLoading] = useState(true);
     const [filterOpen, setFilterOpen] = useState(false);
+    const [categories, setCategories] = useState(['All']);
+    const [materials, setMaterials] = useState(['All']);
+
+    useEffect(() => {
+        getAllContent().then(data => {
+            if (Array.isArray(data?.productCategories) && data.productCategories.length > 0)
+                setCategories(['All', ...data.productCategories]);
+            if (Array.isArray(data?.productMaterials) && data.productMaterials.length > 0)
+                setMaterials(['All', ...data.productMaterials]);
+        }).catch(() => {});
+    }, []);
 
     const category = searchParams.get('category') || 'All';
     const material = searchParams.get('material') || 'All';
@@ -52,8 +61,8 @@ export default function Products() {
     return (
         <>
             <Helmet>
-                <title>Products – Chair Factory</title>
-                <meta name="description" content="Browse our full catalog of handcrafted chairs, benches, and custom furniture." />
+                <title>Products – {document.title.split('–')[1]?.trim() || 'Our Store'}</title>
+                <meta name="description" content="Browse our full product catalog. Filter by category or search for what you need." />
             </Helmet>
 
             {/* ── Hero band ── */}
@@ -68,7 +77,7 @@ export default function Products() {
 
                 {/* ── Category pill tabs ── */}
                 <div className="flex flex-wrap items-center gap-2 mb-8">
-                    {CATEGORIES.map(cat => (
+                    {categories.map(cat => (
                         <button
                             key={cat}
                             onClick={() => setParam('category', cat)}
@@ -80,7 +89,7 @@ export default function Products() {
                                 borderColor: category === cat ? 'var(--accent)' : 'transparent',
                                 transform: category === cat ? 'scale(1.05)' : 'scale(1)',
                             }}>
-                            {CATEGORY_LABELS[cat]}
+                            {cat === 'All' ? 'All Products' : cat}
                         </button>
                     ))}
 
@@ -127,7 +136,7 @@ export default function Products() {
                         <div className="min-w-[200px]">
                             <label className="label">Material</label>
                             <select value={material} onChange={e => setParam('material', e.target.value)} className="input text-sm">
-                                {MATERIALS.map(m => <option key={m} value={m}>{m}</option>)}
+                                {materials.map(m => <option key={m} value={m}>{m}</option>)}
                             </select>
                         </div>
 
@@ -146,7 +155,7 @@ export default function Products() {
                 {/* ── Grid ── */}
                 {loading ? <div className="py-20"><LoadingSpinner /></div> : products.length === 0 ? (
                     <div className="text-center py-24 space-y-3">
-                        <p className="text-6xl">🪑</p>
+                        <p className="text-6xl">📦</p>
                         <h3 className="font-bold text-xl" style={{ color: 'var(--text-primary)' }}>No products found</h3>
                         <p style={{ color: 'var(--text-muted)' }}>Try adjusting your filters or search term</p>
                     </div>

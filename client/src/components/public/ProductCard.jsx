@@ -1,17 +1,27 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Star, Package } from 'lucide-react';
 
-const CATEGORY_COLORS = {
-    CHAIR: { bg: 'rgba(146,64,14,0.1)', text: 'var(--accent)' },
-    BENCH: { bg: 'rgba(22,163,74,0.1)', text: '#15803d' },
-    CUSTOM: { bg: 'rgba(124,58,237,0.1)', text: '#7c3aed' },
-};
+const PALETTE = [
+    { bg: 'rgba(146,64,14,0.1)',  text: '#92400e' },
+    { bg: 'rgba(22,163,74,0.1)',  text: '#15803d' },
+    { bg: 'rgba(124,58,237,0.1)', text: '#7c3aed' },
+    { bg: 'rgba(37,99,235,0.1)',  text: '#1d4ed8' },
+    { bg: 'rgba(219,39,119,0.1)', text: '#be185d' },
+    { bg: 'rgba(234,88,12,0.1)',  text: '#c2410c' },
+    { bg: 'rgba(13,148,136,0.1)', text: '#0f766e' },
+    { bg: 'rgba(101,163,13,0.1)', text: '#4d7c0f' },
+];
+function catColor(name = '') {
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = ((h << 5) - h + name.charCodeAt(i)) | 0;
+    return PALETTE[Math.abs(h) % PALETTE.length];
+}
 
 const PLACEHOLDER_BG = ['#e8d5b7', '#d4c5a9', '#c9b99a', '#ddb89e', '#bfa88c'];
 
 export default function ProductCard({ product, index = 0 }) {
     const { name, slug, category, material, price, featured, images } = product;
-    const catStyle = CATEGORY_COLORS[category] || CATEGORY_COLORS.CHAIR;
+    const catStyle = catColor(category);
     const placeholderBg = PLACEHOLDER_BG[index % PLACEHOLDER_BG.length];
 
     return (
