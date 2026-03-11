@@ -79,9 +79,7 @@ export default function AdminLogin() {
                         </button>
                     </form>
 
-                    <p className="text-center text-xs mt-6" style={{ color: 'var(--text-muted)' }}>
-                        Default: admin@chairfactory.com / Admin@1234
-                    </p>
+
                     <p className="text-center mt-3">
                         <Link to="/" className="text-xs hover:underline" style={{ color: 'var(--accent)' }}>← Back to main website</Link>
                     </p>

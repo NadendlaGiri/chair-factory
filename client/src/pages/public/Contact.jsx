@@ -12,20 +12,20 @@ export default function Contact() {
         getAllContent().then(data => setContact(data.contact || {})).catch(console.error);
     }, []);
 
-    const phone = contact?.phone || '+91 98765 43210';
-    const phoneHref = 'tel:' + phone.replace(/\s+/g, '');
-    const email = contact?.email || 'info@chairfactory.com';
-    const whatsapp = contact?.whatsapp || '919876543210';
-    const whatsappLink = `https://wa.me/${whatsapp}`;
-    const hours = contact?.hours || 'Mon–Sat: 9 AM – 6 PM IST';
-    const address = contact?.address || '123 Industrial Park, Manufacturing District\nCity - 400001, India';
+    const phone = contact?.phone || '';
+    const phoneHref = phone ? 'tel:' + phone.replace(/\s+/g, '') : null;
+    const email = contact?.email || '';
+    const whatsapp = contact?.whatsapp || '';
+    const whatsappLink = whatsapp ? `https://wa.me/${whatsapp}` : null;
+    const hours = contact?.hours || '';
+    const address = contact?.address || '';
 
     const cards = [
-        { icon: Phone, label: 'Phone', value: phone, href: phoneHref, color: '#2563eb' },
-        { icon: Mail, label: 'Email', value: email, href: `mailto:${email}`, color: '#7c3aed' },
-        { icon: MessageCircle, label: 'WhatsApp', value: phone, href: whatsappLink, color: '#16a34a' },
-        { icon: Clock, label: 'Business Hours', value: hours, href: null, color: 'var(--accent)' },
-    ];
+        phone  && { icon: Phone,          label: 'Phone',          value: phone, href: phoneHref,           color: '#2563eb' },
+        email  && { icon: Mail,           label: 'Email',          value: email, href: `mailto:${email}`,   color: '#7c3aed' },
+        whatsapp && { icon: MessageCircle, label: 'WhatsApp',       value: phone || whatsapp, href: whatsappLink, color: '#16a34a' },
+        hours  && { icon: Clock,          label: 'Business Hours', value: hours, href: null,                color: 'var(--accent)' },
+    ].filter(Boolean);
 
     return (
         <>
@@ -64,6 +64,7 @@ export default function Contact() {
                     </div>
 
                     {/* Address */}
+                    {address && (
                     <div className="card mt-8 flex items-start gap-4">
                         <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
                             style={{ backgroundColor: 'var(--surface-overlay)' }}>
@@ -76,8 +77,10 @@ export default function Contact() {
                             </p>
                         </div>
                     </div>
+                    )}
 
-                    {/* WhatsApp CTA */}
+                    {/* WhatsApp CTA — only shown when number is set */}
+                    {whatsappLink && (
                     <div className="text-center mt-12">
                         <a href={`${whatsappLink}?text=Hi, I'm interested in ordering from ${companyName}.`}
                             target="_blank" rel="noopener noreferrer"
@@ -90,6 +93,7 @@ export default function Contact() {
                             We typically respond within 1 hour during business hours
                         </p>
                     </div>
+                    )}
                 </div>
             </section>
         </>

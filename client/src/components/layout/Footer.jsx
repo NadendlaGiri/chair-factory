@@ -14,11 +14,11 @@ export default function Footer() {
         getAllContent().then(data => setContact(data.contact || {})).catch(() => { });
     }, []);
 
-    const phone = contact.phone || '+91 98765 43210';
-    const email = contact.email || 'info@chairfactory.com';
-    const address = contact.address || '123 Industrial Park, Manufacturing District, City - 400001';
-    const whatsapp = contact.whatsapp || '919876543210';
-    const phoneHref = 'tel:' + phone.replace(/\s+/g, '');
+    const phone = contact.phone || '';
+    const email = contact.email || '';
+    const address = contact.address || '';
+    const whatsapp = contact.whatsapp || '';
+    const phoneHref = phone ? 'tel:' + phone.replace(/\s+/g, '') : null;
 
     return (
         <footer style={{ backgroundColor: 'var(--surface-raised)', borderTop: '1px solid var(--border)' }}>
@@ -35,6 +35,7 @@ export default function Footer() {
                         <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                             {tagline || 'Premium handcrafted chairs and benches since 1998. Factory-direct quality for homes, offices, and commercial spaces.'}
                         </p>
+                        {whatsapp && (
                         <a
                             href={`https://wa.me/${whatsapp}?text=Hi, I'm interested in ordering from ${companyName}.`}
                             target="_blank" rel="noopener noreferrer"
@@ -43,6 +44,7 @@ export default function Footer() {
                             <MessageCircle size={18} />
                             WhatsApp Us
                         </a>
+                        )}
                     </div>
 
                     {/* Quick Links */}

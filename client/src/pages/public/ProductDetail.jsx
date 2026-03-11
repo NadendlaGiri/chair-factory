@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, Package, MessageCircle, ShoppingBag, CheckCircle, ChevronLeft, ChevronRight, Share2, Copy, Check } from 'lucide-react';
-import { getProduct } from '../../services/api';
+import { getProduct, getAllContent } from '../../services/api';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import toast from 'react-hot-toast';
 
@@ -13,6 +13,7 @@ export default function ProductDetail() {
     const [activeImg, setActiveImg] = useState(0);
     const [prevImg, setPrevImg] = useState(null);
     const [copied, setCopied] = useState(false);
+    const [whatsapp, setWhatsapp] = useState('');
 
     const handleShare = async () => {
         const url = window.location.href;
@@ -52,7 +53,15 @@ export default function ProductDetail() {
 
     useEffect(() => {
         setLoading(true);
-        getProduct(slug).then(p => { setProduct(p); setActiveImg(0); setPrevImg(null); }).catch(console.error).finally(() => setLoading(false));
+        Promise.all([
+            getProduct(slug),
+            getAllContent(),
+        ]).then(([p, contentData]) => {
+            setProduct(p);
+            setWhatsapp(contentData?.contact?.whatsapp || '');
+            setActiveImg(0);
+            setPrevImg(null);
+        }).catch(console.error).finally(() => setLoading(false));
     }, [slug]);
 
     if (loading) return <LoadingSpinner fullScreen />;
@@ -234,13 +243,15 @@ export default function ProductDetail() {
                             <Link to={`/orders?product=${encodeURIComponent(name)}`} className="btn-primary flex-1 text-center py-3">
                                 <ShoppingBag size={18} /> Order This Product
                             </Link>
+                            {whatsapp && (
                             <a
-                                href={`https://wa.me/919876543210?text=Hi, I'm interested in "${name}"`}
+                                href={`https://wa.me/${whatsapp}?text=Hi, I'm interested in "${name}"`}
                                 target="_blank" rel="noopener noreferrer"
                                 className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold text-white transition-all hover:opacity-90"
                                 style={{ backgroundColor: '#25D366', flex: '0 0 auto' }}>
                                 <MessageCircle size={18} /> WhatsApp
                             </a>
+                            )}
                             <button
                                 type="button"
                                 onClick={handleShare}
