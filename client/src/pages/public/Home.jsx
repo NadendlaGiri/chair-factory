@@ -163,7 +163,12 @@ export default function Home() {
                 <meta name="description" content="Factory-direct premium chairs and benches. Browse our catalog or submit a bulk order request." />
             </Helmet>
 
-            {/* Hero */}
+            {/* Hero — skeleton during load; full section only when there's content */}
+            {loading ? (
+                <section className="relative overflow-hidden min-h-[90vh] h-[90vh] flex items-center">
+                    <HeroSkeleton visible={true} />
+                </section>
+            ) : (heroImages.length > 0 || heroTitle) && (
             <section className="relative overflow-hidden min-h-[90vh] h-[90vh] flex items-center">
                 {/* Theme-aware loading skeleton — fades out once content loads */}
                 <HeroSkeleton visible={loading} />
@@ -279,6 +284,7 @@ export default function Home() {
                     <ChevronDown size={28} />
                 </a>
             </section>
+            )}
 
             {/* ── Dynamic section rendering based on admin layout config ── */}
             {savedLayout
