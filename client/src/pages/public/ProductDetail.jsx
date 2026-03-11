@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, Package, MessageCircle, ShoppingBag, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Package, MessageCircle, ShoppingBag, CheckCircle, ChevronLeft, ChevronRight, Share2, Copy, Check } from 'lucide-react';
 import { getProduct } from '../../services/api';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import toast from 'react-hot-toast';
 
 export default function ProductDetail() {
     const { slug } = useParams();
@@ -11,6 +12,21 @@ export default function ProductDetail() {
     const [loading, setLoading] = useState(true);
     const [activeImg, setActiveImg] = useState(0);
     const [prevImg, setPrevImg] = useState(null);
+    const [copied, setCopied] = useState(false);
+
+    const handleShare = async () => {
+        const url = window.location.href;
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: product?.name, text: product?.description?.slice(0, 100), url });
+            } catch (_) { /* user dismissed */ }
+        } else {
+            await navigator.clipboard.writeText(url);
+            setCopied(true);
+            toast.success('Link copied to clipboard!');
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
 
     // navigate with crossfade tracking
     const navigate = (newIdx) => {
@@ -38,6 +54,18 @@ export default function ProductDetail() {
             <Helmet>
                 <title>{name} – Chair Factory</title>
                 <meta name="description" content={description?.slice(0, 155)} />
+                {/* Open Graph */}
+                <meta property="og:type" content="product" />
+                <meta property="og:title" content={`${name} – Chair Factory`} />
+                <meta property="og:description" content={description?.slice(0, 155)} />
+                <meta property="og:url" content={window.location.href} />
+                {images?.[0] && <meta property="og:image" content={images[0]} />}
+                <meta property="og:site_name" content="Chair Factory" />
+                {/* Twitter / X Card */}
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:title" content={`${name} – Chair Factory`} />
+                <meta name="twitter:description" content={description?.slice(0, 155)} />
+                {images?.[0] && <meta name="twitter:image" content={images[0]} />}
             </Helmet>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -196,6 +224,15 @@ export default function ProductDetail() {
                                 style={{ backgroundColor: '#25D366', flex: '0 0 auto' }}>
                                 <MessageCircle size={18} /> WhatsApp
                             </a>
+                            <button
+                                type="button"
+                                onClick={handleShare}
+                                title="Share this product"
+                                className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold transition-all hover:opacity-80"
+                                style={{ backgroundColor: 'var(--surface-overlay)', color: 'var(--accent)', border: '1px solid var(--border)', flex: '0 0 auto' }}>
+                                {copied ? <Check size={18} /> : <Share2 size={18} />}
+                                {copied ? 'Copied!' : 'Share'}
+                            </button>
                         </div>
                     </div>
                 </div>
