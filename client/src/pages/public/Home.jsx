@@ -11,7 +11,98 @@ import { useThemeStore } from '../../store/themeStore';
 
 const FALLBACK_ICON_MAP = [Clock, Award, Users, Globe];
 
-// ── Theme-aware hero loading skeleton removed optionally ──────────────────────────────────────
+
+
+// ── Theme-aware hero loading skeleton ──────────────────────────────────────
+function HeroSkeleton({ visible }) {
+    const { theme } = useThemeStore();
+
+    const skeletons = {
+        // Light — pulsing skeleton bars
+        light: (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4" style={{ background: 'var(--hero-gradient)' }}>
+                <style>{`@keyframes sk-pulse { 0%,100%{opacity:0.15} 50%{opacity:0.35} }`}</style>
+                <div className="h-8 w-64 rounded-lg" style={{ background: 'var(--accent)', animation: 'sk-pulse 1.6s ease infinite' }} />
+                <div className="h-4 w-96 rounded-lg" style={{ background: 'var(--accent)', animation: 'sk-pulse 1.6s ease infinite 0.1s' }} />
+                <div className="h-4 w-72 rounded-lg" style={{ background: 'var(--accent)', animation: 'sk-pulse 1.6s ease infinite 0.2s' }} />
+                <div className="flex gap-3 mt-4">
+                    <div className="h-10 w-32 rounded-xl" style={{ background: 'var(--accent)', animation: 'sk-pulse 1.6s ease infinite 0.3s' }} />
+                    <div className="h-10 w-32 rounded-xl" style={{ background: 'var(--accent)', animation: 'sk-pulse 1.6s ease infinite 0.4s' }} />
+                </div>
+            </div>
+        ),
+        // Dark — pulsing skeleton bars
+        dark: (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4" style={{ background: '#0f0f0f' }}>
+                {[288, 384, 320].map((w, i) => (
+                    <div key={i} style={{ height: i === 0 ? 28 : 14, width: w, background: 'rgba(255,255,255,0.08)', borderRadius: 6, animation: `sk-pulse 1.6s ease infinite ${i * 0.1}s` }} />
+                ))}
+                <div className="flex gap-3 mt-4">
+                    {[128, 128].map((w, i) => <div key={i} style={{ height: 40, width: w, background: 'rgba(255,255,255,0.08)', borderRadius: 10, animation: `sk-pulse 1.6s ease infinite ${0.3 + i * 0.1}s` }} />)}
+                </div>
+            </div>
+        ),
+        // Industrial — blinking bars
+        industrial: (
+            <div className="absolute inset-0 overflow-hidden" style={{ background: '#1a1a18' }}>
+                <style>{`
+                    @keyframes blink-a { 0%,49%{opacity:1} 50%,100%{opacity:0.2} }
+                    @keyframes blink-b { 0%,49%{opacity:0.2} 50%,100%{opacity:1} }
+                `}</style>
+                <div className="absolute inset-0 flex items-center justify-center gap-2">
+                    {[1,2,3,4,5,6,7,8].map((_, i) => (
+                        <div key={i} style={{
+                            width: 6, height: `${40 + (i % 3) * 30}px`,
+                            background: 'var(--accent)',
+                            borderRadius: 2,
+                            animation: `${i % 2 === 0 ? 'blink-a' : 'blink-b'} ${0.6 + i * 0.1}s step-end infinite`,
+                        }} />
+                    ))}
+                </div>
+            </div>
+        ),
+        // Wood — pulsing skeleton bars (warm tones)
+        wood: (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4" style={{ background: 'linear-gradient(135deg,#3b1f0c 0%,#6b3a1f 100%)' }}>
+                {[260, 380, 300].map((w, i) => (
+                    <div key={i} className="rounded-lg" style={{ height: i === 0 ? 28 : 14, width: w, background: 'rgba(205,150,90,0.25)', animation: `sk-pulse 1.6s ease infinite ${i * 0.1}s` }} />
+                ))}
+                <div className="flex gap-3 mt-4">
+                    {[128, 128].map((w, i) => <div key={i} style={{ height: 40, width: w, background: 'rgba(205,150,90,0.2)', borderRadius: 10, animation: `sk-pulse 1.6s ease infinite ${0.3 + i * 0.1}s` }} />)}
+                </div>
+            </div>
+        ),
+        // Modern — rotating arc
+        modern: (
+            <div className="absolute inset-0" style={{ background: 'var(--hero-gradient)' }}>
+                <style>{`@keyframes arc { to { transform: rotate(360deg); } }`}</style>
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <div style={{
+                        width: 64, height: 64,
+                        borderRadius: '50%',
+                        border: '4px solid rgba(var(--accent-rgb, 146,64,14),0.15)',
+                        borderTopColor: 'var(--accent)',
+                        animation: 'arc 0.9s linear infinite',
+                    }} />
+                </div>
+            </div>
+        ),
+    };
+
+    return (
+        <div
+            className="absolute inset-0"
+            style={{
+                zIndex: 10,
+                pointerEvents: visible ? 'auto' : 'none',
+                opacity: visible ? 1 : 0,
+                transition: 'opacity 0.6s ease',
+            }}
+        >
+            {skeletons[theme] || skeletons.light}
+        </div>
+    );
+}
 
 export default function Home() {
     const [featured, setFeatured] = useState([]);
@@ -65,15 +156,6 @@ export default function Home() {
     const ctaTitle = homeCTA.title || '';
     const ctaSubtitle = homeCTA.subtitle || '';
 
-    if (loading) {
-        return (
-            <>
-                <Helmet><title>Chair Factory – Premium Handcrafted Furniture</title></Helmet>
-                <LoadingSpinner fullScreen />
-            </>
-        );
-    }
-
     return (
         <>
             <Helmet>
@@ -81,9 +163,15 @@ export default function Home() {
                 <meta name="description" content="Factory-direct premium chairs and benches. Browse our catalog or submit a bulk order request." />
             </Helmet>
 
-            {/* Hero */}
-            {(heroImages.length > 0 || heroTitle) && (
+            {/* Hero — skeleton during load; full section only when there's content */}
+            {loading ? (
+                <section className="relative overflow-hidden min-h-[90vh] h-[90vh] flex items-center">
+                    <HeroSkeleton visible={true} />
+                </section>
+            ) : (heroImages.length > 0 || heroTitle) && (
             <section className="relative overflow-hidden min-h-[90vh] h-[90vh] flex items-center">
+                {/* Theme-aware loading skeleton — fades out once content loads */}
+                <HeroSkeleton visible={loading} />
                 {/* ── Background slideshow ── */}
                 {heroImages.length > 0 ? (
                     <>

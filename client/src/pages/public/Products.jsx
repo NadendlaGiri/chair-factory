@@ -4,7 +4,9 @@ import { Helmet } from 'react-helmet-async';
 import { Search, SlidersHorizontal, X, ChevronDown, Loader2 } from 'lucide-react';
 import { getProducts, getAllContent } from '../../services/api';
 import ProductCard from '../../components/public/ProductCard';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import ProductCardSkeleton from '../../components/ui/ProductCardSkeleton';
+
+
 
 export default function Products() {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -200,8 +202,8 @@ export default function Products() {
 
                 {/* ── Grid ── */}
                 {loading ? (
-                    <div className="py-24 flex items-center justify-center">
-                        <LoadingSpinner size="lg" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
                     </div>
                 ) : products.length === 0 ? (
                     <div className="text-center py-24 space-y-3">
