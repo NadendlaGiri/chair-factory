@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Package, ClipboardList, Clock, CheckCircle, ArrowRight, TrendingUp } from 'lucide-react';
-import { getDashboardStats } from '../../services/api';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import { Package, ClipboardList, Clock, CheckCircle, ArrowRight, TrendingUp, Eye, Activity } from 'lucide-react';
+import { getDashboardStats, getTopProducts, getActivityLogs } from '../../services/api';
+import { TableRowSkeleton } from '../../components/ui/ProductCardSkeleton';
 
 const STATUS_COLORS = {
     NEW: { bg: '#dbeafe', text: '#1e40af', label: 'New' },
@@ -14,13 +14,21 @@ const STATUS_COLORS = {
 
 export default function AdminDashboard() {
     const [stats, setStats] = useState(null);
+    const [topProducts, setTopProducts] = useState([]);
+    const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        getDashboardStats().then(setStats).catch(console.error).finally(() => setLoading(false));
+        Promise.all([
+            getDashboardStats().catch(() => null),
+            getTopProducts().catch(() => []),
+            getActivityLogs(5).catch(() => [])
+        ]).then(([dStats, dTop, dLogs]) => {
+            if (dStats) setStats(dStats);
+            setTopProducts(dTop);
+            setLogs(dLogs);
+        }).finally(() => setLoading(false));
     }, []);
-
-    if (loading) return <LoadingSpinner />;
 
     const cards = [
         { label: 'Total Orders', value: stats?.totalOrders ?? 0, icon: ClipboardList, color: '#2563eb', bg: '#dbeafe' },
@@ -42,7 +50,12 @@ export default function AdminDashboard() {
 
                 {/* Stat Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-                    {cards.map(({ label, value, icon: Icon, color, bg }) => (
+                    {loading ? Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="card animate-pulse h-[104px]" style={{ backgroundColor: 'var(--surface-raised)' }}>
+                            <div className="h-4 w-1/2 mb-4 rounded bg-gray-200 dark:bg-gray-700"></div>
+                            <div className="h-8 w-1/3 rounded bg-gray-200 dark:bg-gray-700"></div>
+                        </div>
+                    )) : cards.map(({ label, value, icon: Icon, color, bg }) => (
                         <div key={label} className="card group hover:shadow-card-hover">
                             <div className="flex items-start justify-between">
                                 <div>
@@ -65,7 +78,7 @@ export default function AdminDashboard() {
                             View All <ArrowRight size={14} />
                         </Link>
                     </div>
-                    {!stats?.recentOrders?.length ? (
+                    {!stats?.recentOrders?.length && !loading ? (
                         <p className="text-center py-8" style={{ color: 'var(--text-muted)' }}>No orders yet</p>
                     ) : (
                         <div className="overflow-x-auto">
@@ -80,7 +93,13 @@ export default function AdminDashboard() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {stats.recentOrders.map(order => {
+                                    {loading ? (
+                                        <>
+                                            <TableRowSkeleton cols={5} />
+                                            <TableRowSkeleton cols={5} />
+                                            <TableRowSkeleton cols={5} />
+                                        </>
+                                    ) : stats.recentOrders.map(order => {
                                         const s = STATUS_COLORS[order.status] || STATUS_COLORS.NEW;
                                         return (
                                             <tr key={order.id}>
@@ -120,6 +139,67 @@ export default function AdminDashboard() {
                             </div>
                         </Link>
                     ))}
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Top Products */}
+                    <div className="card">
+                        <div className="flex items-center gap-2 mb-5">
+                            <Eye size={18} style={{ color: 'var(--accent)' }} />
+                            <h2 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>Top 10 Viewed Products</h2>
+                        </div>
+                        {loading ? (
+                            <div className="space-y-4">
+                                {Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-10 bg-gray-100 rounded animate-pulse" />)}
+                            </div>
+                        ) : topProducts.length === 0 ? (
+                            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No product views yet.</p>
+                        ) : (
+                            <div className="space-y-3">
+                                {topProducts.map((p, i) => (
+                                    <div key={p.id} className="flex items-center justify-between p-3 rounded-xl" style={{ backgroundColor: 'var(--surface-overlay)' }}>
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-bold text-lg w-5 text-center" style={{ color: i < 3 ? 'var(--accent)' : 'var(--text-muted)' }}>{i + 1}</span>
+                                            <div>
+                                                <p className="font-semibold text-sm line-clamp-1" style={{ color: 'var(--text-primary)' }}>{p.name}</p>
+                                                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{p.category}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: 'rgba(var(--accent-rgb), 0.1)', color: 'var(--accent)' }}>
+                                            <Eye size={12} /> {p.views.toLocaleString()}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Activity Log */}
+                    <div className="card">
+                        <div className="flex items-center gap-2 mb-5">
+                            <Activity size={18} style={{ color: 'var(--accent)' }} />
+                            <h2 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>Recent Admin Activity</h2>
+                        </div>
+                        {loading ? (
+                            <div className="space-y-4">
+                                {Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-10 bg-gray-100 rounded animate-pulse" />)}
+                            </div>
+                        ) : logs.length === 0 ? (
+                            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No recent activity.</p>
+                        ) : (
+                            <div className="space-y-3">
+                                {logs.map(log => (
+                                    <div key={log.id} className="flex flex-col p-3 rounded-xl border border-transparent hover:border-gray-200 transition-colors" style={{ backgroundColor: 'var(--surface-overlay)' }}>
+                                        <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{log.action}</p>
+                                        <div className="flex items-center justify-between mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+                                            <span>By: {log.adminName}</span>
+                                            <span>{new Date(log.createdAt).toLocaleString('en-IN')}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </>

@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Search, SlidersHorizontal, X, ChevronDown } from 'lucide-react';
+import { Search, SlidersHorizontal, X, ChevronDown, Loader2 } from 'lucide-react';
 import { getProducts, getAllContent } from '../../services/api';
 import ProductCard from '../../components/public/ProductCard';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import ProductCardSkeleton from '../../components/ui/ProductCardSkeleton';
 
 
 
@@ -17,6 +17,11 @@ export default function Products() {
     const [filterOpen, setFilterOpen] = useState(false);
     const [categories, setCategories] = useState(['All']);
     const [materials, setMaterials] = useState(['All']);
+
+    // Autocomplete state
+    const [suggestions, setSuggestions] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [searching, setSearching] = useState(false);
 
     useEffect(() => {
         getAllContent().then(data => {
@@ -47,7 +52,29 @@ export default function Products() {
         finally { setLoading(false); }
     }, [category, material, search, page]);
 
-    useEffect(() => { fetchProducts(); }, [fetchProducts]);
+    useEffect(() => {
+        fetchProducts();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [fetchProducts]);
+
+    // Search autocomplete debounce
+    useEffect(() => {
+        if (!search || search.length < 2) {
+            setSuggestions([]);
+            setShowSuggestions(false);
+            return;
+        }
+        const timer = setTimeout(async () => {
+            setSearching(true);
+            try {
+                const res = await getProducts({ search, limit: 5 });
+                setSuggestions(res.products || []);
+                setShowSuggestions(true);
+            } catch { }
+            finally { setSearching(false); }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [search]);
 
     const setParam = (key, value) => {
         const p = new URLSearchParams(searchParams);
@@ -118,8 +145,8 @@ export default function Products() {
                     <div className="mb-8 p-5 rounded-2xl flex flex-wrap gap-6 items-end animate-fade-in"
                         style={{ backgroundColor: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
 
-                        {/* Search */}
-                        <div className="flex-1 min-w-[200px]">
+                        {/* Search + Autocomplete */}
+                        <div className="flex-1 min-w-[200px] relative">
                             <label className="label">Search</label>
                             <div className="relative">
                                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
@@ -127,9 +154,30 @@ export default function Products() {
                                     type="text"
                                     placeholder="Search products…"
                                     value={search}
+                                    onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
+                                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                                     onChange={e => setParam('search', e.target.value)}
                                     className="input pl-9" />
+                                {searching && <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-gray-400" />}
                             </div>
+
+                            {/* Autocomplete Dropdown */}
+                            {showSuggestions && suggestions.length > 0 && (
+                                <div className="absolute top-full mt-2 left-0 right-0 z-50 rounded-xl py-2 shadow-xl animate-fade-in border"
+                                    style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+                                    {suggestions.map(s => (
+                                        <button
+                                            key={s.id}
+                                            onMouseDown={() => { setParam('search', s.name); setShowSuggestions(false); }}
+                                            className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-3">
+                                            {s.images?.[0] ? (
+                                                <img src={s.images[0]} alt="" className="w-8 h-8 rounded object-cover" />
+                                            ) : <div className="w-8 h-8 rounded bg-gray-200 dark:bg-gray-700" />}
+                                            <span className="text-sm font-medium flex-1 truncate">{s.name}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         {/* Material */}
@@ -153,7 +201,11 @@ export default function Products() {
                 )}
 
                 {/* ── Grid ── */}
-                {loading ? <div className="py-20"><LoadingSpinner /></div> : products.length === 0 ? (
+                {loading ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
+                    </div>
+                ) : products.length === 0 ? (
                     <div className="text-center py-24 space-y-3">
                         <p className="text-6xl">📦</p>
                         <h3 className="font-bold text-xl" style={{ color: 'var(--text-primary)' }}>No products found</h3>
@@ -161,7 +213,7 @@ export default function Products() {
                     </div>
                 ) : (
                     <>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
                         </div>
 

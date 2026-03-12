@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, Package, MessageCircle, ShoppingBag, CheckCircle, ChevronLeft, ChevronRight, Share2, Copy, Check } from 'lucide-react';
-import { getProduct, getAllContent } from '../../services/api';
+import { ArrowLeft, Package, MessageCircle, ShoppingBag, CheckCircle, ChevronLeft, ChevronRight, Share2, Copy, Check, Send } from 'lucide-react';
+import { getProduct, getAllContent, submitInquiry } from '../../services/api';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import Breadcrumbs from '../../components/ui/Breadcrumbs';
+import RelatedProducts from '../../components/public/RelatedProducts';
 import toast from 'react-hot-toast';
 
 export default function ProductDetail() {
@@ -14,6 +16,9 @@ export default function ProductDetail() {
     const [prevImg, setPrevImg] = useState(null);
     const [copied, setCopied] = useState(false);
     const [whatsapp, setWhatsapp] = useState('');
+
+    const [inquiryData, setInquiryData] = useState({ name: '', phone: '', message: '' });
+    const [sending, setSending] = useState(false);
 
     const handleShare = async () => {
         const url = window.location.href;
@@ -51,6 +56,26 @@ export default function ProductDetail() {
         setActiveImg(cur => { setPrevImg(cur); return newIdx; });
     };
 
+    const handleInquirySubmit = async (e) => {
+        e.preventDefault();
+        setSending(true);
+        try {
+            await submitInquiry({
+                productName: product.name,
+                productSlug: product.slug,
+                customerName: inquiryData.name,
+                phone: inquiryData.phone,
+                message: inquiryData.message
+            });
+            toast.success('Inquiry sent successfully! We will contact you soon.');
+            setInquiryData({ name: '', phone: '', message: '' });
+        } catch (error) {
+            toast.error('Failed to send inquiry.');
+        } finally {
+            setSending(false);
+        }
+    };
+
     useEffect(() => {
         setLoading(true);
         Promise.all([
@@ -66,14 +91,10 @@ export default function ProductDetail() {
 
     if (loading) return <LoadingSpinner fullScreen />;
     if (!product) return (
-        <div className="text-center py-32">
-            <p className="text-5xl mb-4">🔍</p>
-            <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Product not found</h2>
-            <Link to="/products" className="btn-primary">Back to Products</Link>
-        </div>
+        <div className="text-center py-20 text-gray-500">Product not found</div>
     );
 
-    const { name, category, description, material, dimensions, price, availability, images, tags } = product;
+    const { name, description, images, price, availability, inventory, dimensions, material, category, tags } = product;
 
     return (
         <>
@@ -92,12 +113,27 @@ export default function ProductDetail() {
                 <meta name="twitter:title" content={`${name} – Chair Factory`} />
                 <meta name="twitter:description" content={description?.slice(0, 155)} />
                 {images?.[0] && <meta name="twitter:image" content={images[0]} />}
+
+                <script type="application/ld+json">
+                    {JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "Product",
+                        "name": name,
+                        "image": images || [],
+                        "description": description,
+                        "sku": slug,
+                        "offers": {
+                            "@type": "Offer",
+                            "priceCurrency": "INR",
+                            "price": price || 0,
+                            "availability": availability ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+                        }
+                    })}
+                </script>
             </Helmet>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-                <Link to="/products" className="inline-flex items-center gap-2 text-sm mb-8 hover:underline" style={{ color: 'var(--text-muted)' }}>
-                    <ArrowLeft size={16} /> Back to Products
-                </Link>
+                <Breadcrumbs crumbs={[{ label: 'Products', to: '/products' }, { label: name }]} />
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                     {/* Images */}
@@ -218,13 +254,13 @@ export default function ProductDetail() {
                                 ['Material', material],
                                 ['Dimensions', dimensions],
                                 ['Price', price ? `₹${price.toLocaleString()}` : 'Contact for quote'],
-                                ['Availability', availability ? 'In Stock' : 'Out of Stock'],
+                                ['Availability', !availability || inventory === 0 ? 'Out of Stock' : (inventory !== null && inventory <= 5) ? `Low Stock (${inventory} left)` : 'In Stock'],
                             ].map(([key, val]) => (
                                 <div key={key} className="flex items-center justify-between text-sm">
                                     <span className="font-semibold" style={{ color: 'var(--text-muted)' }}>{key}</span>
-                                    <span className={`font-medium ${key === 'Availability' ? (availability ? 'text-green-600' : 'text-red-500') : ''}`}
+                                    <span className={`font-medium ${key === 'Availability' ? (val === 'Out of Stock' ? 'text-red-500' : val.includes('Low') ? 'text-amber-500' : 'text-green-600') : ''}`}
                                         style={{ color: key === 'Availability' ? undefined : 'var(--text-primary)' }}>
-                                        {key === 'Availability' && <CheckCircle size={14} className="inline mr-1" />}
+                                        {key === 'Availability' && val === 'In Stock' && <CheckCircle size={14} className="inline mr-1" />}
                                         {val}
                                     </span>
                                 </div>
@@ -262,8 +298,27 @@ export default function ProductDetail() {
                                 {copied ? 'Copied!' : 'Share'}
                             </button>
                         </div>
+
+                        {/* Quick Inquiry Form */}
+                        <div className="mt-12 p-6 rounded-2xl" style={{ backgroundColor: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
+                            <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Request More Info</h3>
+                            <form onSubmit={handleInquirySubmit} className="space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <input required type="text" placeholder="Your Name" className="input" value={inquiryData.name} onChange={e => setInquiryData({ ...inquiryData, name: e.target.value })} />
+                                    <input required type="tel" placeholder="Phone Number" className="input" value={inquiryData.phone} onChange={e => setInquiryData({ ...inquiryData, phone: e.target.value })} />
+                                </div>
+                                <textarea required rows="3" placeholder={`I'm interested in ${name}...`} className="input" value={inquiryData.message} onChange={e => setInquiryData({ ...inquiryData, message: e.target.value })}></textarea>
+                                <button type="submit" disabled={sending} className="btn-primary w-full justify-center">
+                                    {sending ? <LoadingSpinner size="sm" /> : <><Send size={16} /> Send Inquiry</>}
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
+
+                {/* Related Products Section */}
+                {product?.slug && <RelatedProducts currentSlug={product.slug} />}
+
             </div>
         </>
     );

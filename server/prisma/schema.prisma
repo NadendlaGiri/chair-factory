@@ -28,8 +28,10 @@ model Product {
   material     String
   dimensions   String
   price        Float?
+  inventory    Int?          // null means unlimited stock
   availability Boolean       @default(true)
   featured     Boolean       @default(false)
+  views        Int           @default(0)
   images       String[]
   tags         String[]      @default([])
   createdAt    DateTime      @default(now())
@@ -58,6 +60,23 @@ model SiteContent {
   key       String   @unique
   value     Json
   updatedAt DateTime @updatedAt
+}
+
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  action    String
+  adminName String
+  createdAt DateTime @default(now())
+}
+
+model ProductInquiry {
+  id           Int      @id @default(autoincrement())
+  productName  String
+  productSlug  String
+  customerName String
+  phone        String
+  message      String   @db.Text
+  createdAt    DateTime @default(now())
 }
 
 model ThemeConfig {

@@ -29,10 +29,15 @@ const getProducts = async (req, res) => {
 
 const getProduct = async (req, res) => {
     try {
-        const product = await prisma.product.findUnique({ where: { slug: req.params.slug } });
+        // Increment views while fetching the product
+        const product = await prisma.product.update({
+            where: { slug: req.params.slug },
+            data: { views: { increment: 1 } },
+        });
         if (!product) return res.status(404).json({ error: 'Product not found' });
         res.json(product);
     } catch (err) {
+        if (err.code === 'P2025') return res.status(404).json({ error: 'Product not found' });
         res.status(500).json({ error: 'Server error' });
     }
 };
@@ -100,4 +105,65 @@ const deleteProduct = async (req, res) => {
     }
 };
 
-module.exports = { getProducts, getProduct, createProduct, updateProduct, deleteProduct };
+const getRelatedProducts = async (req, res) => {
+    try {
+        const { slug } = req.params;
+        const currentProd = await prisma.product.findUnique({ where: { slug } });
+        if (!currentProd) return res.status(404).json({ error: 'Product not found' });
+
+        const related = await prisma.product.findMany({
+            where: {
+                category: currentProd.category,
+                id: { not: currentProd.id },
+            },
+            take: 4,
+            orderBy: { views: 'desc' },
+        });
+        res.json(related);
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+const getTopProducts = async (req, res) => {
+    try {
+        const top = await prisma.product.findMany({
+            take: 10,
+            orderBy: { views: 'desc' },
+        });
+        res.json(top);
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+const importProducts = async (req, res) => {
+    // Basic CSV/JSON bulk import handling
+    try {
+        const items = req.body.items || [];
+        if (!items.length) return res.status(400).json({ error: 'No items provided' });
+
+        const created = [];
+        for (const item of items) {
+            let slug = slugify(item.name);
+            const existing = await prisma.product.findUnique({ where: { slug } });
+            if (existing) slug = `${slug}-${Date.now()}`;
+
+            const p = await prisma.product.create({
+                data: {
+                    name: item.name, slug, category: item.category || 'General',
+                    description: item.description || '', material: item.material || '',
+                    dimensions: item.dimensions || '', price: item.price ? parseFloat(item.price) : null,
+                    images: item.images || [],
+                }
+            });
+            created.push(p);
+        }
+        res.json({ message: `Imported ${created.length} products`, created });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+module.exports = { getProducts, getProduct, createProduct, updateProduct, deleteProduct, getRelatedProducts, getTopProducts, importProducts };

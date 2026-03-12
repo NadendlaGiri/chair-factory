@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Plus, Pencil, Trash2, Loader2, X, Package, ImagePlus } from 'lucide-react';
-import { getProducts, createProduct, updateProduct, deleteProduct, uploadImages, getAllContent } from '../../services/api';
+import { Plus, Pencil, Trash2, Loader2, X, Package, ImagePlus, Upload } from 'lucide-react';
+import { getProducts, createProduct, updateProduct, deleteProduct, uploadImages, getAllContent, importProducts } from '../../services/api';
+import Papa from 'papaparse';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ConfirmModal from '../../components/ui/ConfirmModal';
 import toast from 'react-hot-toast';
 
-const empty = (firstCat = 'General') => ({ name: '', category: firstCat, description: '', material: '', dimensions: '', price: '', availability: true, featured: false, tags: '' });
+const empty = (firstCat = 'General') => ({ name: '', category: firstCat, description: '', material: '', dimensions: '', price: '', inventory: '', availability: true, featured: false, tags: '' });
 
 export default function AdminProducts() {
     const [products, setProducts] = useState([]);
@@ -22,6 +23,7 @@ export default function AdminProducts() {
     const [confirmState, setConfirmState] = useState({ open: false, id: null });
     const [categories, setCategories] = useState(['General']);
     const fileInputRef = useRef(null);
+    const csvInputRef = useRef(null);
 
     useEffect(() => {
         getAllContent().then(data => {
@@ -45,7 +47,7 @@ export default function AdminProducts() {
     const openCreate = () => { setEditing(null); setForm(empty(categories[0])); setImgFiles([]); setExistingImages([]); setModal(true); };
     const openEdit = (p) => {
         setEditing(p);
-        setForm({ ...p, price: p.price || '', tags: (p.tags || []).join(', ') });
+        setForm({ ...p, price: p.price || '', inventory: p.inventory ?? '', tags: (p.tags || []).join(', ') });
         setImgFiles([]);
         setExistingImages(p.images || []);
         setModal(true);
@@ -67,6 +69,7 @@ export default function AdminProducts() {
             const payload = {
                 ...form,
                 price: form.price ? parseFloat(form.price) : null,
+                inventory: form.inventory !== '' ? parseInt(form.inventory) : null,
                 tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
                 images,
             };
@@ -100,6 +103,32 @@ export default function AdminProducts() {
         } catch { toast.error('Delete failed'); }
     };
 
+    const handleCSVImport = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setLoading(true);
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: async (results) => {
+                try {
+                    const res = await importProducts({ items: results.data });
+                    toast.success(res.message || 'Import successful');
+                    fetchProducts();
+                } catch (err) {
+                    toast.error(err.response?.data?.error || 'Import failed');
+                } finally {
+                    setLoading(false);
+                    e.target.value = null;
+                }
+            },
+            error: (error) => {
+                toast.error(`CSV Parsing error: ${error.message}`);
+                setLoading(false);
+            }
+        });
+    };
+
     const pages = Math.ceil(total / 10);
 
     return (
@@ -111,9 +140,16 @@ export default function AdminProducts() {
                         <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Products</h1>
                         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{total} total products</p>
                     </div>
-                    <button onClick={openCreate} className="btn-primary">
-                        <Plus size={18} /> Add Product
-                    </button>
+                    <div className="flex items-center gap-3">
+                        {/* Hidden CSV Input */}
+                        <input type="file" accept=".csv" ref={csvInputRef} className="hidden" onChange={handleCSVImport} />
+                        <button onClick={() => csvInputRef.current?.click()} className="btn-secondary flex items-center gap-2">
+                            <Upload size={16} /> Import CSV
+                        </button>
+                        <button onClick={openCreate} className="btn-primary">
+                            <Plus size={18} /> Add Product
+                        </button>
+                    </div>
                 </div>
 
                 {loading ? <LoadingSpinner /> : (
@@ -124,8 +160,8 @@ export default function AdminProducts() {
                                     <tr>
                                         <th>Product</th>
                                         <th>Category</th>
-                                        <th>Material</th>
                                         <th>Price</th>
+                                        <th>Inventory</th>
                                         <th>Status</th>
                                         <th>Featured</th>
                                         <th>Actions</th>
@@ -146,8 +182,18 @@ export default function AdminProducts() {
                                                 </div>
                                             </td>
                                             <td><span className="badge badge-primary">{p.category}</span></td>
-                                            <td>{p.material}</td>
                                             <td>{p.price ? `₹${p.price.toLocaleString()}` : '—'}</td>
+                                            <td>
+                                                {p.inventory === null || p.inventory === undefined ? (
+                                                    <span className="text-gray-400 font-mono">∞</span>
+                                                ) : p.inventory === 0 ? (
+                                                    <span className="text-red-500 font-bold">0</span>
+                                                ) : p.inventory <= 5 ? (
+                                                    <span className="text-amber-500 font-bold">{p.inventory}</span>
+                                                ) : (
+                                                    <span className="text-green-600 font-medium">{p.inventory}</span>
+                                                )}
+                                            </td>
                                             <td>
                                                 <span className={`badge ${p.availability ? 'badge-success' : 'badge-danger'}`}>
                                                     {p.availability ? 'Active' : 'Unavailable'}
@@ -219,6 +265,10 @@ export default function AdminProducts() {
                                 <div>
                                     <label className="label">Price (₹) — leave blank for quote</label>
                                     <input className="input" type="number" min="0" step="0.01" value={form.price} onChange={e => set('price', e.target.value)} placeholder="e.g. 1200" />
+                                </div>
+                                <div>
+                                    <label className="label">Inventory (leave blank for ∞)</label>
+                                    <input className="input" type="number" min="0" step="1" value={form.inventory} onChange={e => set('inventory', e.target.value)} placeholder="e.g. 100" />
                                 </div>
                                 <div className="sm:col-span-2">
                                     <label className="label">Description *</label>

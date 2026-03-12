@@ -47,6 +47,24 @@ export const updateProduct = (id, data) =>
     api.put(`/products/${id}`, data).then(r => r.data);
 export const deleteProduct = (id) =>
     api.delete(`/products/${id}`).then(r => r.data);
+export const getRelatedProducts = (slug) =>
+    api.get(`/products/${slug}/related`).then(r => r.data);
+export const getTopProducts = () =>
+    api.get(`/products/analytics/top`).then(r => r.data);
+export const importProducts = (data) =>
+    api.post(`/products/import`, data).then(r => r.data);
+
+// Inquiries
+export const submitInquiry = (data) =>
+    api.post(`/inquiries`, data).then(r => r.data);
+export const getInquiries = () =>
+    api.get(`/inquiries`).then(r => r.data);
+export const deleteInquiry = (id) =>
+    api.delete(`/inquiries/${id}`).then(r => r.data);
+
+// Activity Logs
+export const getActivityLogs = (limit = 20) =>
+    api.get(`/activities?limit=${limit}`).then(r => r.data);
 
 // Orders
 export const submitOrder = (data) =>

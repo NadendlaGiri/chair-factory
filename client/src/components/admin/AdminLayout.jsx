@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, Package, ClipboardList, FileText,
-    Palette, LogOut, Menu, X, Armchair, ChevronRight, Settings2
+    Palette, LogOut, Menu, X, Armchair, ChevronRight, Settings2, MessageCircle
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useCompanyStore } from '../../store/companyStore';
@@ -12,6 +12,7 @@ const navItems = [
     { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
     { to: '/admin/products', icon: Package, label: 'Products' },
     { to: '/admin/orders', icon: ClipboardList, label: 'Orders' },
+    { to: '/admin/inquiries', icon: MessageCircle, label: 'Inquiries' },
     { to: '/admin/content', icon: FileText, label: 'Content' },
     { to: '/admin/themes', icon: Palette, label: 'Themes' },
     { to: '/admin/settings', icon: Settings2, label: 'Settings' },

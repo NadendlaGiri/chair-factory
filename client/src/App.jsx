@@ -1,9 +1,12 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
 import { useAuthStore } from './store/authStore';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import LoadingSpinner from './components/ui/LoadingSpinner';
+import ScrollToTop from './components/ui/ScrollToTop';
+import StickyQuote from './components/ui/StickyQuote';
+import CompareBar from './components/ui/CompareBar';
 
 // Public pages (lazy loaded)
 const Home = lazy(() => import('./pages/public/Home'));
@@ -12,12 +15,13 @@ const ProductDetail = lazy(() => import('./pages/public/ProductDetail'));
 const About = lazy(() => import('./pages/public/About'));
 const BulkOrders = lazy(() => import('./pages/public/BulkOrders'));
 const Contact = lazy(() => import('./pages/public/Contact'));
+const Compare = lazy(() => import('./pages/public/Compare'));
 
-// Admin pages (lazy loaded)
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'));
 const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'));
+const AdminInquiries = lazy(() => import('./pages/admin/AdminInquiries'));
 const AdminContent = lazy(() => import('./pages/admin/AdminContent'));
 const AdminThemes = lazy(() => import('./pages/admin/AdminThemes'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
@@ -28,9 +32,15 @@ function ProtectedRoute({ children }) {
     return isAuthenticated ? children : <Navigate to="/admin/login" replace />;
 }
 
+function RouteScrollReset() {
+    const { pathname } = useLocation();
+    useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+    return null;
+}
+
 function PublicLayout({ children }) {
     return (
-        <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--surface)' }}>
+        <div className="min-h-screen flex flex-col page-transition" style={{ backgroundColor: 'var(--surface)' }}>
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />
@@ -42,28 +52,27 @@ export default function App() {
     return (
         <BrowserRouter>
             <Suspense fallback={<LoadingSpinner fullScreen />}>
+                <RouteScrollReset />
                 <Routes>
-                    {/* Public Routes */}
+                    {/* Public */}
                     <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
                     <Route path="/products" element={<PublicLayout><Products /></PublicLayout>} />
                     <Route path="/products/:slug" element={<PublicLayout><ProductDetail /></PublicLayout>} />
                     <Route path="/about" element={<PublicLayout><About /></PublicLayout>} />
                     <Route path="/orders" element={<PublicLayout><BulkOrders /></PublicLayout>} />
                     <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
+                    <Route path="/compare" element={<PublicLayout><Compare /></PublicLayout>} />
 
-                    {/* Admin Routes */}
+                    {/* Admin */}
                     <Route path="/admin/login" element={<AdminLogin />} />
-                    <Route path="/admin" element={
-                        <ProtectedRoute>
-                            <AdminLayout />
-                        </ProtectedRoute>
-                    }>
-                        <Route index element={<AdminDashboard />} />
-                        <Route path="products" element={<AdminProducts />} />
-                        <Route path="orders" element={<AdminOrders />} />
-                        <Route path="content" element={<AdminContent />} />
-                        <Route path="themes" element={<AdminThemes />} />
-                        <Route path="settings" element={<AdminSettings />} />
+                    <Route element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+                        <Route path="admin" element={<AdminDashboard />} />
+                        <Route path="admin/products" element={<AdminProducts />} />
+                        <Route path="admin/orders" element={<AdminOrders />} />
+                        <Route path="admin/inquiries" element={<AdminInquiries />} />
+                        <Route path="admin/content" element={<AdminContent />} />
+                        <Route path="admin/themes" element={<AdminThemes />} />
+                        <Route path="admin/settings" element={<AdminSettings />} />
                     </Route>
 
                     <Route path="*" element={
@@ -76,6 +85,10 @@ export default function App() {
                         </PublicLayout>
                     } />
                 </Routes>
+                {/* ── Global floating UI ── */}
+                <ScrollToTop />
+                <StickyQuote />
+                <CompareBar />
             </Suspense>
         </BrowserRouter>
     );

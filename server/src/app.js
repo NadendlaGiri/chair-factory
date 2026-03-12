@@ -12,6 +12,9 @@ const orderRoutes = require('./routes/orders');
 const contentRoutes = require('./routes/content');
 const themeRoutes = require('./routes/themes');
 const uploadRoutes = require('./routes/upload');
+const inquiryRoutes = require('./routes/inquiries');
+const activityRoutes = require('./routes/activities');
+const sitemapRoute = require('./routes/sitemap');
 
 const app = express();
 
@@ -65,6 +68,15 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/themes', themeRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/inquiries', inquiryRoutes);
+app.use('/api/activities', activityRoutes);
+
+// SEO Sitemap and robots.txt mapping at root
+app.use('/', sitemapRoute);
+app.get('/robots.txt', (req, res) => {
+    res.type('text/plain');
+    res.send(`User-agent: *\nAllow: /\nSitemap: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/sitemap.xml`);
+});
 
 // 404 handler
 app.use((req, res) => {

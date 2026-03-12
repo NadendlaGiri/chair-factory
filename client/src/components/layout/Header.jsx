@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Menu, X, Sun, Moon, Armchair } from 'lucide-react';
+import { Menu, X, Sun, Moon, Armchair, Heart } from 'lucide-react';
 import { useThemeStore } from '../../store/themeStore';
 import { useCompanyStore } from '../../store/companyStore';
+import { useWishlistStore } from '../../store/wishlistStore';
 
 const navLinks = [
     { to: '/', label: 'Home' },
@@ -18,6 +19,7 @@ export default function Header() {
     const { theme, toggleDark } = useThemeStore();
     const location = useLocation();
     const { name: companyName, logo: companyLogo, fetch: fetchCompany } = useCompanyStore();
+    const wishlistCount = useWishlistStore(s => s.count());
 
     useEffect(() => { fetchCompany(); }, []);
 
@@ -75,6 +77,17 @@ export default function Header() {
 
                     {/* Actions */}
                     <div className="flex items-center gap-2">
+                        {/* Wishlist Icon */}
+                        <div className="relative flex items-center justify-center p-2">
+                            <Heart size={20} style={{ color: 'var(--text-secondary)' }} />
+                            {wishlistCount > 0 && (
+                                <span className="absolute top-1 right-0 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                                    style={{ backgroundColor: '#ef4444', width: '16px', height: '16px' }}>
+                                    {wishlistCount}
+                                </span>
+                            )}
+                        </div>
+                        
                         <button onClick={toggleDark} className="btn-ghost p-2.5 rounded-lg"
                             aria-label="Toggle theme" title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
                             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
