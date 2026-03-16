@@ -163,17 +163,13 @@ export default function Home() {
                 <meta name="description" content="Factory-direct premium chairs and benches. Browse our catalog or submit a bulk order request." />
             </Helmet>
 
-            {/* Hero — skeleton during load; full section only when there's content */}
-            {loading ? (
-                <section className="relative overflow-hidden min-h-[90vh] h-[90vh] flex items-center">
-                    <HeroSkeleton visible={true} />
-                </section>
-            ) : (heroImages.length > 0 || heroTitle) && (
+            {/* Hero — always renders; skeleton fades out after load */}
             <section className="relative overflow-hidden min-h-[90vh] h-[90vh] flex items-center">
                 {/* Theme-aware loading skeleton — fades out once content loads */}
                 <HeroSkeleton visible={loading} />
-                {/* ── Background slideshow ── */}
-                {heroImages.length > 0 ? (
+
+                {/* ── Background slideshow (only when loaded + images exist) ── */}
+                {!loading && heroImages.length > 0 && (
                     <>
                         {/* Keyframe definitions */}
                         <style>{`
@@ -225,57 +221,64 @@ export default function Home() {
                             </div>
                         )}
                     </>
-                ) : (
+                )}
+
+                {/* Gradient background fallback (when no slideshow images) */}
+                {!loading && heroImages.length === 0 && (
                     <>
                         <div className="absolute inset-0" style={{ background: 'var(--hero-gradient)', zIndex: 0 }} />
                         <div className="absolute inset-0 opacity-5 z-[1]"
                             style={{ backgroundImage: 'repeating-linear-gradient(45deg,var(--accent) 0,var(--accent) 1px,transparent 0,transparent 50%)', backgroundSize: '24px 24px' }} />
                     </>
                 )}
-                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"
-                    style={{ zIndex: 2 }}>
-                    <div className="animate-slide-up">
-                        <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold mb-6 uppercase tracking-widest"
-                            style={{
-                                backgroundColor: heroImages.length > 0 ? 'rgba(255,255,255,0.15)' : 'var(--surface-overlay)',
-                                color: heroImages.length > 0 ? '#fff' : 'var(--accent)',
-                                backdropFilter: 'blur(6px)',
-                            }}>
-                            {heroBadge}
-                        </span>
-                        <h1 className="section-title text-4xl md:text-5xl lg:text-6xl leading-tight mb-6"
-                            style={{
-                                fontFamily: "'Playfair Display', Georgia, serif",
-                                color: heroImages.length > 0 ? '#fff' : undefined,
-                                textShadow: heroImages.length > 0 ? '0 2px 12px rgba(0,0,0,0.4)' : undefined,
-                            }}>
-                            {heroTitle}
-                        </h1>
-                        <p className="text-lg md:text-xl mb-8 max-w-xl"
-                            style={{ color: heroImages.length > 0 ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)' }}>
-                            {heroSubtitle}
-                        </p>
-                        <div className="flex flex-wrap gap-4">
-                            <Link to="/products" className="btn-primary text-base py-3 px-8">
-                                {ctaPrimary} <ArrowRight size={18} />
-                            </Link>
-                            <Link to="/orders" className="btn-outline text-base py-3 px-8">
-                                {ctaSecondary}
-                            </Link>
-                        </div>
-                    </div>
 
-                    {/* Hero visual — hidden (uncomment to restore the emoji chair placeholder)
-                    {heroImages.length === 0 && (
-                        <div className="hidden lg:flex items-center justify-center">
-                            <div className="w-80 h-80 rounded-full flex items-center justify-center animate-float"
-                                style={{ backgroundColor: 'var(--surface-overlay)', border: '3px solid var(--border)', boxShadow: '0 0 60px rgba(var(--accent-rgb),0.2)' }}>
-                                <span style={{ fontSize: '160px', lineHeight: 1 }}>🪑</span>
+                {/* Hero text content */}
+                {!loading && (
+                    <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"
+                        style={{ zIndex: 2 }}>
+                        <div className="animate-slide-up">
+                            <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold mb-6 uppercase tracking-widest"
+                                style={{
+                                    backgroundColor: heroImages.length > 0 ? 'rgba(255,255,255,0.15)' : 'var(--surface-overlay)',
+                                    color: heroImages.length > 0 ? '#fff' : 'var(--accent)',
+                                    backdropFilter: 'blur(6px)',
+                                }}>
+                                {heroBadge}
+                            </span>
+                            <h1 className="section-title text-4xl md:text-5xl lg:text-6xl leading-tight mb-6"
+                                style={{
+                                    fontFamily: "'Playfair Display', Georgia, serif",
+                                    color: heroImages.length > 0 ? '#fff' : undefined,
+                                    textShadow: heroImages.length > 0 ? '0 2px 12px rgba(0,0,0,0.4)' : undefined,
+                                }}>
+                                {heroTitle}
+                            </h1>
+                            <p className="text-lg md:text-xl mb-8 max-w-xl"
+                                style={{ color: heroImages.length > 0 ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)' }}>
+                                {heroSubtitle}
+                            </p>
+                            <div className="flex flex-wrap gap-4">
+                                <Link to="/products" className="btn-primary text-base py-3 px-8">
+                                    {ctaPrimary} <ArrowRight size={18} />
+                                </Link>
+                                <Link to="/orders" className="btn-outline text-base py-3 px-8">
+                                    {ctaSecondary}
+                                </Link>
                             </div>
                         </div>
-                    )}
-                    */}
-                </div>
+
+                        {/* Hero visual — hidden (uncomment to restore the emoji chair placeholder)
+                        {heroImages.length === 0 && (
+                            <div className="hidden lg:flex items-center justify-center">
+                                <div className="w-80 h-80 rounded-full flex items-center justify-center animate-float"
+                                    style={{ backgroundColor: 'var(--surface-overlay)', border: '3px solid var(--border)', boxShadow: '0 0 60px rgba(var(--accent-rgb),0.2)' }}>
+                                    <span style={{ fontSize: '160px', lineHeight: 1 }}>🪑</span>
+                                </div>
+                            </div>
+                        )}
+                        */}
+                    </div>
+                )}
 
                 {/* Scroll indicator */}
                 <a href="#stats"
@@ -284,7 +287,6 @@ export default function Home() {
                     <ChevronDown size={28} />
                 </a>
             </section>
-            )}
 
             {/* ── Dynamic section rendering based on admin layout config ── */}
             {savedLayout
